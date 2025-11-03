@@ -5,7 +5,9 @@
 #include "CrewMember.h"
 #include "MapSetupActor.h"
 #include "ProceduralInteriorGeometry.h"
+#include "ScreenshotCapture.h"
 #include "UObject/ConstructorHelpers.h"
+#include "TimerManager.h"
 
 ASteelCathedralsGameMode::ASteelCathedralsGameMode()
 {
@@ -15,6 +17,13 @@ ASteelCathedralsGameMode::ASteelCathedralsGameMode()
 
 	// Initialize default spawn locations for 3 crew members
 	InitializeSpawnLocations();
+
+	// Check for auto-capture command line arg
+	if (FParse::Param(FCommandLine::Get(), TEXT("AutoCapture")))
+	{
+		bAutoCaptureScreenshots = true;
+		UE_LOG(LogTemp, Warning, TEXT("🤖 AUTO-CAPTURE enabled via command line"));
+	}
 
 	UE_LOG(LogTemp, Warning, TEXT("SteelCathedralsGameMode created - Default pawn: CrewMember (INTERIOR character)"));
 }
@@ -204,4 +213,48 @@ void ASteelCathedralsGameMode::StartPlay()
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("✅ Positioned %d crew member(s) in cockpit"), PlayerIndex);
+
+	// Auto-capture screenshots for automated testing
+	if (bAutoCaptureScreenshots)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("🤖 AUTO-CAPTURE enabled - spawning screenshot actor..."));
+
+		// Spawn screenshot capture actor
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Name = FName(TEXT("AutoScreenshotCapture"));
+
+		AScreenshotCapture* ScreenshotActor = GetWorld()->SpawnActor<AScreenshotCapture>(
+			AScreenshotCapture::StaticClass(),
+			FVector::ZeroVector,
+			FRotator::ZeroRotator,
+			SpawnParams
+		);
+
+		if (ScreenshotActor)
+		{
+			// Set the mech as target
+			ScreenshotActor->TargetActor = MechActor;
+
+			// Start capture sequence after a 3-second delay (let everything settle)
+			FTimerHandle TimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(
+				TimerHandle,
+				[ScreenshotActor]()
+				{
+					if (ScreenshotActor)
+					{
+						ScreenshotActor->StartCaptureSequence();
+					}
+				},
+				3.0f,  // 3 second delay
+				false  // Don't loop
+			);
+
+			UE_LOG(LogTemp, Warning, TEXT("✅ Screenshot capture will start in 3 seconds"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("❌ Failed to spawn screenshot capture actor!"));
+		}
+	}
 }
