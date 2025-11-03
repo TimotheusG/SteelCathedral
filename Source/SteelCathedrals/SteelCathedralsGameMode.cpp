@@ -4,6 +4,7 @@
 #include "Mech.h"
 #include "CrewMember.h"
 #include "MapSetupActor.h"
+#include "ProceduralInteriorGeometry.h"
 #include "UObject/ConstructorHelpers.h"
 
 ASteelCathedralsGameMode::ASteelCathedralsGameMode()
@@ -21,28 +22,16 @@ ASteelCathedralsGameMode::ASteelCathedralsGameMode()
 void ASteelCathedralsGameMode::InitializeSpawnLocations()
 {
 	// ============================================================
-	// HIERARCHY:
-	// World -> Mech (at MechSpawnLocation) -> Interior (at +200,0,+2500 from mech) -> Crew (offsets from interior)
+	// SPAWN LOCATIONS ARE NOW DETERMINED BY INTERIOR GEOMETRY
+	// The interior knows where stations are, so it knows where crew should spawn
+	// No more magic numbers!
 	// ============================================================
 
-	// Interior cockpit is at this offset from mech origin
-	const FVector InteriorOffsetFromMech = FVector(200.0f, 0.0f, 2500.0f);
+	// We'll populate spawn locations in StartPlay() once the interior exists
+	CrewSpawnLocations.Empty();
+	CrewSpawnRotations.Empty();
 
-	// Crew spawn positions RELATIVE to mech origin (which includes interior offset)
-
-	// Player 1: Front-left, near Pilot station
-	CrewSpawnLocations.Add(InteriorOffsetFromMech + FVector(-300.0f, -200.0f, 100.0f));
-	CrewSpawnRotations.Add(FRotator(0.0f, 0.0f, 0.0f)); // Forward
-
-	// Player 2: Front-right, near Gunner station
-	CrewSpawnLocations.Add(InteriorOffsetFromMech + FVector(-300.0f, 200.0f, 100.0f));
-	CrewSpawnRotations.Add(FRotator(0.0f, 0.0f, 0.0f)); // Forward
-
-	// Player 3: Center cockpit, navigation position
-	CrewSpawnLocations.Add(InteriorOffsetFromMech + FVector(0.0f, 0.0f, 100.0f));
-	CrewSpawnRotations.Add(FRotator(0.0f, 0.0f, 0.0f)); // Forward
-
-	UE_LOG(LogTemp, Log, TEXT("Initialized 3 crew spawn locations RELATIVE to mech origin"));
+	UE_LOG(LogTemp, Log, TEXT("Spawn locations will be determined by interior geometry"));
 }
 
 FTransform ASteelCathedralsGameMode::GetNextCrewSpawnTransform()
@@ -140,7 +129,7 @@ void ASteelCathedralsGameMode::StartPlay()
 	Super::StartPlay();
 
 	// Position crew members inside mech cockpit
-	// HIERARCHY: World -> Mech -> Crew (relative to mech)
+	// HIERARCHY: World -> Mech -> Interior -> Crew
 
 	if (!GetWorld())
 	{
@@ -154,32 +143,61 @@ void ASteelCathedralsGameMode::StartPlay()
 		return;
 	}
 
-	// Get mech's actual world position (may differ from MechSpawnLocation if moved)
+	// Get interior geometry from mech (it spawns it in BeginPlay)
+	AProceduralInteriorGeometry* Interior = MechActor->GetInteriorEnvironment();
+	if (!Interior)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Interior is NULL! Cannot get spawn positions!"));
+		return;
+	}
+
+	// Get spawn positions from interior (these are relative to interior origin)
+	TArray<FVector> InteriorSpawnPositions = Interior->GetCrewSpawnPositions();
+
+	// Get mech's actual world position
 	FVector MechWorldLocation = MechActor->GetActorLocation();
 	FRotator MechWorldRotation = MechActor->GetActorRotation();
 
-	UE_LOG(LogTemp, Warning, TEXT("Positioning crew relative to Mech at world location: %s"),
-		*MechWorldLocation.ToString());
+	// Get interior's actual world position (it's attached to mech)
+	FVector InteriorWorldLocation = Interior->GetActorLocation();
 
+	UE_LOG(LogTemp, Warning, TEXT("Positioning crew:"));
+	UE_LOG(LogTemp, Warning, TEXT("  Mech at: %s"), *MechWorldLocation.ToString());
+	UE_LOG(LogTemp, Warning, TEXT("  Interior at: %s"), *InteriorWorldLocation.ToString());
+
+	// Populate spawn locations array from interior
+	CrewSpawnLocations.Empty();
+	CrewSpawnRotations.Empty();
+
+	for (const FVector& SpawnPos : InteriorSpawnPositions)
+	{
+		// Spawn positions are relative to interior, convert to world
+		FVector WorldPos = InteriorWorldLocation + SpawnPos;
+		CrewSpawnLocations.Add(WorldPos);
+		CrewSpawnRotations.Add(FRotator::ZeroRotator);
+
+		UE_LOG(LogTemp, Warning, TEXT("  Spawn point: Interior=%s -> World=%s"),
+			*SpawnPos.ToString(), *WorldPos.ToString());
+	}
+
+	// Now position all players
 	int32 PlayerIndex = 0;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
 		if (PC && PC->GetPawn())
 		{
-			// Get next crew spawn (RELATIVE to mech origin)
-			FTransform RelativeToMech = GetNextCrewSpawnTransform();
+			// Get next crew spawn
+			FTransform SpawnTransform = GetNextCrewSpawnTransform();
 
-			// Transform from mech-space to world-space
-			FVector WorldLocation = MechWorldLocation + RelativeToMech.GetLocation();
-			FRotator WorldRotation = MechWorldRotation + RelativeToMech.GetRotation().Rotator();
+			PC->GetPawn()->SetActorLocationAndRotation(
+				SpawnTransform.GetLocation(),
+				SpawnTransform.GetRotation().Rotator()
+			);
 
-			PC->GetPawn()->SetActorLocationAndRotation(WorldLocation, WorldRotation);
-
-			UE_LOG(LogTemp, Warning, TEXT("Crew %d: Relative=%s -> World=%s"),
+			UE_LOG(LogTemp, Warning, TEXT("  ✅ Crew %d positioned at: %s"),
 				PlayerIndex + 1,
-				*RelativeToMech.GetLocation().ToString(),
-				*WorldLocation.ToString());
+				*SpawnTransform.GetLocation().ToString());
 
 			PlayerIndex++;
 		}

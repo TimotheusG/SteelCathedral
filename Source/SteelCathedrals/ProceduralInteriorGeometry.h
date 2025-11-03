@@ -74,6 +74,22 @@ public:
 	UPROPERTY()
 	UProceduralMeshComponent* Corridors;
 
+	// Detailed components
+	UPROPERTY()
+	UProceduralMeshComponent* Consoles;
+
+	UPROPERTY()
+	UProceduralMeshComponent* FloorGrating;
+
+	UPROPERTY()
+	UProceduralMeshComponent* WallPanels;
+
+	UPROPERTY()
+	UProceduralMeshComponent* Reactor;
+
+	UPROPERTY()
+	UProceduralMeshComponent* Catwalks;
+
 	// Spawned stations
 	UPROPERTY()
 	TArray<class AMechStation*> Stations;
@@ -92,11 +108,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interior")
 	void ClearInterior();
 
+	// Get crew spawn positions relative to THIS actor (interior)
+	UFUNCTION(BlueprintCallable, Category = "Interior")
+	TArray<FVector> GetCrewSpawnPositions() const;
+
 private:
 	void CreateCockpitGeometry();
 	void CreateReactorRoomGeometry();
 	void CreateCorridorGeometry();
 	void CreateWindowGeometry();
+
+	// New detailed geometry methods
+	void CreateConsoleGeometry();
+	void CreateFloorGratingGeometry();
+	void CreateWallPanelsGeometry();
+	void CreateReactorGeometry();
+	void CreateCatwalkGeometry();
 
 	// Spawn stations in the cockpit
 	void SpawnStations();
@@ -104,13 +131,13 @@ private:
 	// Spawn test hazards for debugging
 	void SpawnTestHazards();
 
-	// Helper to create a room
+private:
+	// Helper methods
 	void CreateRoom(UProceduralMeshComponent* MeshComp, FVector RoomSize, bool bHasWindow = false);
-
-	// Helper to create flat panel
 	void CreatePanel(TArray<FVector>& Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals,
 	                 TArray<FVector2D>& UVs, FVector Center, FVector Size, FRotator Rotation);
-
+	void CreateBox(TArray<FVector>& Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals,
+	               TArray<FVector2D>& UVs, FVector Center, FVector Size);
 	void AddQuad(TArray<FVector>& Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals,
 	             TArray<FVector2D>& UVs, FVector V0, FVector V1, FVector V2, FVector V3, FVector Normal);
 };

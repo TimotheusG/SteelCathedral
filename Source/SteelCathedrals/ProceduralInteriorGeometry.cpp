@@ -48,6 +48,13 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	ReactorRoom = NewObject<UProceduralMeshComponent>(this, TEXT("ReactorRoom"));
 	Corridors = NewObject<UProceduralMeshComponent>(this, TEXT("Corridors"));
 
+	// Detailed components
+	Consoles = NewObject<UProceduralMeshComponent>(this, TEXT("Consoles"));
+	FloorGrating = NewObject<UProceduralMeshComponent>(this, TEXT("FloorGrating"));
+	WallPanels = NewObject<UProceduralMeshComponent>(this, TEXT("WallPanels"));
+	Reactor = NewObject<UProceduralMeshComponent>(this, TEXT("Reactor"));
+	Catwalks = NewObject<UProceduralMeshComponent>(this, TEXT("Catwalks"));
+
 	// Register all components
 	CockpitFloor->RegisterComponent();
 	CockpitFloor->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -67,6 +74,21 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	Corridors->RegisterComponent();
 	Corridors->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
+	Consoles->RegisterComponent();
+	Consoles->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+	FloorGrating->RegisterComponent();
+	FloorGrating->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+	WallPanels->RegisterComponent();
+	WallPanels->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+	Reactor->RegisterComponent();
+	Reactor->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+	Catwalks->RegisterComponent();
+	Catwalks->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
 	// Set collision
 	CockpitFloor->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CockpitWalls->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -74,12 +96,24 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	CockpitWindow->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ReactorRoom->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Corridors->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Consoles->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	FloorGrating->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WallPanels->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Reactor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Catwalks->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	// Generate geometry
 	CreateCockpitGeometry();
 	CreateWindowGeometry();
 	CreateReactorRoomGeometry();
 	CreateCorridorGeometry();
+
+	// Create detailed geometry
+	CreateConsoleGeometry();
+	CreateFloorGratingGeometry();
+	CreateWallPanelsGeometry();
+	CreateReactorGeometry();
+	CreateCatwalkGeometry();
 
 	// Spawn stations in cockpit (only if we have a world)
 	if (GetWorld())
@@ -89,6 +123,34 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Interior generated successfully!"));
+}
+
+TArray<FVector> AProceduralInteriorGeometry::GetCrewSpawnPositions() const
+{
+	TArray<FVector> SpawnPositions;
+
+	// Define station positions (these are the SAME as in SpawnStations)
+	// These are RELATIVE to interior origin
+	TArray<FVector> StationPositions = {
+		FVector(-200, -150, 0) * InteriorScale, // Pilot
+		FVector(-200, 150, 0) * InteriorScale,  // Gunner
+		FVector(0, 0, 0) * InteriorScale        // Center (for 3rd player)
+	};
+
+	// Spawn crew BEHIND each station (so they face it)
+	const float SpawnDistanceBehindStation = 80.0f * InteriorScale; // 80cm behind station
+	const float SpawnHeight = 100.0f * InteriorScale; // Standing height
+
+	// Player 1: Behind pilot station
+	SpawnPositions.Add(StationPositions[0] + FVector(SpawnDistanceBehindStation, 0, SpawnHeight));
+
+	// Player 2: Behind gunner station
+	SpawnPositions.Add(StationPositions[1] + FVector(SpawnDistanceBehindStation, 0, SpawnHeight));
+
+	// Player 3: Center of cockpit
+	SpawnPositions.Add(StationPositions[2] + FVector(0, 0, SpawnHeight));
+
+	return SpawnPositions;
 }
 
 void AProceduralInteriorGeometry::SpawnStations()
@@ -211,6 +273,11 @@ void AProceduralInteriorGeometry::ClearInterior()
 	if (CockpitWindow) { CockpitWindow->DestroyComponent(); CockpitWindow = nullptr; }
 	if (ReactorRoom) { ReactorRoom->DestroyComponent(); ReactorRoom = nullptr; }
 	if (Corridors) { Corridors->DestroyComponent(); Corridors = nullptr; }
+	if (Consoles) { Consoles->DestroyComponent(); Consoles = nullptr; }
+	if (FloorGrating) { FloorGrating->DestroyComponent(); FloorGrating = nullptr; }
+	if (WallPanels) { WallPanels->DestroyComponent(); WallPanels = nullptr; }
+	if (Reactor) { Reactor->DestroyComponent(); Reactor = nullptr; }
+	if (Catwalks) { Catwalks->DestroyComponent(); Catwalks = nullptr; }
 }
 
 void AProceduralInteriorGeometry::CreateCockpitGeometry()
@@ -427,4 +494,304 @@ void AProceduralInteriorGeometry::AddQuad(TArray<FVector>& Vertices, TArray<int3
 	UVs.Add(FVector2D(1, 0));
 	UVs.Add(FVector2D(1, 1));
 	UVs.Add(FVector2D(0, 1));
+}
+
+void AProceduralInteriorGeometry::CreateBox(TArray<FVector>& Vertices, TArray<int32>& Triangles,
+                                            TArray<FVector>& Normals, TArray<FVector2D>& UVs,
+                                            FVector Center, FVector Size)
+{
+	FVector HalfSize = Size * 0.5f;
+
+	// Front face (+X)
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		Center + FVector(HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+		Center + FVector(HalfSize.X, HalfSize.Y, -HalfSize.Z),
+		Center + FVector(HalfSize.X, HalfSize.Y, HalfSize.Z),
+		Center + FVector(HalfSize.X, -HalfSize.Y, HalfSize.Z),
+		FVector(1, 0, 0));
+
+	// Back face (-X)
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		Center + FVector(-HalfSize.X, HalfSize.Y, -HalfSize.Z),
+		Center + FVector(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+		Center + FVector(-HalfSize.X, -HalfSize.Y, HalfSize.Z),
+		Center + FVector(-HalfSize.X, HalfSize.Y, HalfSize.Z),
+		FVector(-1, 0, 0));
+
+	// Right face (+Y)
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		Center + FVector(HalfSize.X, HalfSize.Y, -HalfSize.Z),
+		Center + FVector(-HalfSize.X, HalfSize.Y, -HalfSize.Z),
+		Center + FVector(-HalfSize.X, HalfSize.Y, HalfSize.Z),
+		Center + FVector(HalfSize.X, HalfSize.Y, HalfSize.Z),
+		FVector(0, 1, 0));
+
+	// Left face (-Y)
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		Center + FVector(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+		Center + FVector(HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+		Center + FVector(HalfSize.X, -HalfSize.Y, HalfSize.Z),
+		Center + FVector(-HalfSize.X, -HalfSize.Y, HalfSize.Z),
+		FVector(0, -1, 0));
+
+	// Top face (+Z)
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		Center + FVector(-HalfSize.X, -HalfSize.Y, HalfSize.Z),
+		Center + FVector(HalfSize.X, -HalfSize.Y, HalfSize.Z),
+		Center + FVector(HalfSize.X, HalfSize.Y, HalfSize.Z),
+		Center + FVector(-HalfSize.X, HalfSize.Y, HalfSize.Z),
+		FVector(0, 0, 1));
+
+	// Bottom face (-Z)
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		Center + FVector(-HalfSize.X, HalfSize.Y, -HalfSize.Z),
+		Center + FVector(HalfSize.X, HalfSize.Y, -HalfSize.Z),
+		Center + FVector(HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+		Center + FVector(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+		FVector(0, 0, -1));
+}
+
+void AProceduralInteriorGeometry::CreateConsoleGeometry()
+{
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FLinearColor> VertexColors;
+	TArray<FProcMeshTangent> Tangents;
+
+	// Create console boxes at each station location
+	FVector ConsoleSize = FVector(80, 120, 100) * InteriorScale;
+
+	// Pilot console - front left
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		FVector(-200, -150, 50) * InteriorScale, ConsoleSize);
+
+	// Gunner console - front right
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		FVector(-200, 150, 50) * InteriorScale, ConsoleSize);
+
+	// Technician console - back left
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		FVector(150, -150, 50) * InteriorScale, ConsoleSize);
+
+	// Navigation console - back right
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		FVector(150, 150, 50) * InteriorScale, ConsoleSize);
+
+	Consoles->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+
+	// Apply material
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+	if (BaseMaterial)
+	{
+		UMaterialInstanceDynamic* ConsoleMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+		ConsoleMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.15f, 0.18f, 0.22f, 1.0f));
+		Consoles->SetMaterial(0, ConsoleMat);
+	}
+}
+
+void AProceduralInteriorGeometry::CreateFloorGratingGeometry()
+{
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FLinearColor> VertexColors;
+	TArray<FProcMeshTangent> Tangents;
+
+	// Create industrial grating pattern - grid of raised bars
+	float BarWidth = 8.0f * InteriorScale;
+	float BarHeight = 3.0f * InteriorScale;
+	float GridSpacing = 50.0f * InteriorScale;
+
+	// Floor bounds
+	float FloorMinX = -290.0f * InteriorScale;
+	float FloorMaxX = 290.0f * InteriorScale;
+	float FloorMinY = -240.0f * InteriorScale;
+	float FloorMaxY = 240.0f * InteriorScale;
+	float FloorZ = 1.0f * InteriorScale;
+
+	// X-direction bars
+	for (float Y = FloorMinY; Y <= FloorMaxY; Y += GridSpacing)
+	{
+		CreateBox(Vertices, Triangles, Normals, UVs,
+			FVector((FloorMinX + FloorMaxX) * 0.5f, Y, FloorZ + BarHeight * 0.5f),
+			FVector(FloorMaxX - FloorMinX, BarWidth, BarHeight));
+	}
+
+	// Y-direction bars
+	for (float X = FloorMinX; X <= FloorMaxX; X += GridSpacing)
+	{
+		CreateBox(Vertices, Triangles, Normals, UVs,
+			FVector(X, (FloorMinY + FloorMaxY) * 0.5f, FloorZ + BarHeight * 0.5f),
+			FVector(BarWidth, FloorMaxY - FloorMinY, BarHeight));
+	}
+
+	FloorGrating->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+
+	// Apply material
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+	if (BaseMaterial)
+	{
+		UMaterialInstanceDynamic* GratingMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+		GratingMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.3f, 0.3f, 0.32f, 1.0f));
+		FloorGrating->SetMaterial(0, GratingMat);
+	}
+}
+
+void AProceduralInteriorGeometry::CreateWallPanelsGeometry()
+{
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FLinearColor> VertexColors;
+	TArray<FProcMeshTangent> Tangents;
+
+	float PanelDepth = 5.0f * InteriorScale;
+	float PanelInset = 10.0f * InteriorScale;
+	float Height = 250.0f * InteriorScale;
+
+	// Left wall panels
+	for (int i = 0; i < 4; i++)
+	{
+		float Y = (-200.0f + i * 120.0f) * InteriorScale;
+		CreateBox(Vertices, Triangles, Normals, UVs,
+			FVector(-300.0f * InteriorScale + PanelDepth * 0.5f, Y, Height * 0.5f),
+			FVector(PanelDepth, 80.0f * InteriorScale, 180.0f * InteriorScale));
+	}
+
+	// Right wall panels
+	for (int i = 0; i < 4; i++)
+	{
+		float Y = (-200.0f + i * 120.0f) * InteriorScale;
+		CreateBox(Vertices, Triangles, Normals, UVs,
+			FVector(300.0f * InteriorScale - PanelDepth * 0.5f, Y, Height * 0.5f),
+			FVector(PanelDepth, 80.0f * InteriorScale, 180.0f * InteriorScale));
+	}
+
+	// Back wall panels
+	for (int i = 0; i < 4; i++)
+	{
+		float X = (-200.0f + i * 120.0f) * InteriorScale;
+		CreateBox(Vertices, Triangles, Normals, UVs,
+			FVector(X, -250.0f * InteriorScale + PanelDepth * 0.5f, Height * 0.5f),
+			FVector(80.0f * InteriorScale, PanelDepth, 180.0f * InteriorScale));
+	}
+
+	WallPanels->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+
+	// Apply material
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+	if (BaseMaterial)
+	{
+		UMaterialInstanceDynamic* PanelMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+		PanelMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.2f, 0.22f, 0.25f, 1.0f));
+		WallPanels->SetMaterial(0, PanelMat);
+	}
+}
+
+void AProceduralInteriorGeometry::CreateReactorGeometry()
+{
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FLinearColor> VertexColors;
+	TArray<FProcMeshTangent> Tangents;
+
+	// Create cylindrical reactor core (approximated with octagon)
+	FVector ReactorCenter = FVector(-800, 0, 150) * InteriorScale;
+	float ReactorRadius = 80.0f * InteriorScale;
+	float ReactorHeight = 200.0f * InteriorScale;
+	int32 NumSides = 8;
+
+	// Create octagonal cylinder
+	for (int i = 0; i < NumSides; i++)
+	{
+		float Angle1 = (i / (float)NumSides) * PI * 2.0f;
+		float Angle2 = ((i + 1) / (float)NumSides) * PI * 2.0f;
+
+		FVector P1 = ReactorCenter + FVector(0, FMath::Cos(Angle1) * ReactorRadius, -ReactorHeight * 0.5f + FMath::Sin(Angle1) * ReactorRadius);
+		FVector P2 = ReactorCenter + FVector(0, FMath::Cos(Angle2) * ReactorRadius, -ReactorHeight * 0.5f + FMath::Sin(Angle2) * ReactorRadius);
+		FVector P3 = ReactorCenter + FVector(0, FMath::Cos(Angle2) * ReactorRadius, ReactorHeight * 0.5f + FMath::Sin(Angle2) * ReactorRadius);
+		FVector P4 = ReactorCenter + FVector(0, FMath::Cos(Angle1) * ReactorRadius, ReactorHeight * 0.5f + FMath::Sin(Angle1) * ReactorRadius);
+
+		FVector Normal = FVector(0, FMath::Cos((Angle1 + Angle2) * 0.5f), FMath::Sin((Angle1 + Angle2) * 0.5f));
+		AddQuad(Vertices, Triangles, Normals, UVs, P1, P2, P3, P4, Normal);
+	}
+
+	// Reactor core housing (box around it)
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		ReactorCenter, FVector(120, 200, 240) * InteriorScale);
+
+	Reactor->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+
+	// Apply glowing material
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+	if (BaseMaterial)
+	{
+		UMaterialInstanceDynamic* ReactorMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+		ReactorMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.2f, 0.5f, 1.0f, 1.0f)); // Cyan glow
+		Reactor->SetMaterial(0, ReactorMat);
+	}
+}
+
+void AProceduralInteriorGeometry::CreateCatwalkGeometry()
+{
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FLinearColor> VertexColors;
+	TArray<FProcMeshTangent> Tangents;
+
+	// Create catwalk in corridor
+	float CatwalkWidth = 100.0f * InteriorScale;
+	float CatwalkThickness = 5.0f * InteriorScale;
+	float CatwalkLength = 500.0f * InteriorScale;
+	FVector CatwalkCenter = FVector(-600, 0, 120) * InteriorScale;
+
+	// Catwalk platform
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		CatwalkCenter,
+		FVector(CatwalkLength, CatwalkWidth, CatwalkThickness));
+
+	// Support beams (4 corners)
+	float BeamSize = 8.0f * InteriorScale;
+	float BeamHeight = 120.0f * InteriorScale;
+
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		FVector(-600, -CatwalkWidth * 0.4f, BeamHeight * 0.5f) * InteriorScale,
+		FVector(BeamSize, BeamSize, BeamHeight));
+
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		FVector(-600, CatwalkWidth * 0.4f, BeamHeight * 0.5f) * InteriorScale,
+		FVector(BeamSize, BeamSize, BeamHeight));
+
+	// Railings
+	float RailingHeight = 100.0f * InteriorScale;
+	float RailingThickness = 3.0f * InteriorScale;
+
+	// Left railing
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		CatwalkCenter + FVector(0, -CatwalkWidth * 0.5f, RailingHeight * 0.5f),
+		FVector(CatwalkLength, RailingThickness, RailingHeight));
+
+	// Right railing
+	CreateBox(Vertices, Triangles, Normals, UVs,
+		CatwalkCenter + FVector(0, CatwalkWidth * 0.5f, RailingHeight * 0.5f),
+		FVector(CatwalkLength, RailingThickness, RailingHeight));
+
+	Catwalks->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+
+	// Apply material
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+	if (BaseMaterial)
+	{
+		UMaterialInstanceDynamic* CatwalkMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+		CatwalkMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.35f, 0.35f, 0.37f, 1.0f));
+		Catwalks->SetMaterial(0, CatwalkMat);
+	}
 }

@@ -138,6 +138,14 @@ public:
 	void HandleBoostPressed();
 
 	// ============================================================
+	// Accessors
+	// ============================================================
+
+	/** Get the interior environment */
+	UFUNCTION(BlueprintCallable, Category = "Mech|Interior")
+	AProceduralInteriorGeometry* GetInteriorEnvironment() const { return InteriorEnvironment; }
+
+	// ============================================================
 	// Status Queries
 	// ============================================================
 
