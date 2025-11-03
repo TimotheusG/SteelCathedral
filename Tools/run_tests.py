@@ -213,29 +213,81 @@ def quick_validation():
         print("=" * 80)
         return True
 
+def check_screenshots():
+    """Check if screenshots exist and display them"""
+    screenshot_dir = PROJECT_ROOT / "Saved" / "Screenshots" / "WindowsEditor"
+
+    if not screenshot_dir.exists():
+        return []
+
+    screenshots = list(screenshot_dir.glob("*.png"))
+    screenshots.sort(key=lambda p: p.stat().st_mtime, reverse=True)  # Most recent first
+
+    return screenshots[:10]  # Return up to 10 most recent
+
+def print_screenshot_instructions():
+    """Print instructions for taking automated screenshots"""
+    print()
+    print("=" * 80)
+    print("AUTOMATED SCREENSHOT CAPTURE")
+    print("=" * 80)
+    print()
+    print("To capture multi-angle screenshots for analysis:")
+    print()
+    print("1. Open Unreal Editor")
+    print("2. Press Play (PIE)")
+    print("3. Open console (~ key) and type:")
+    print("   SpawnActor ScreenshotCapture")
+    print("4. Then type:")
+    print("   ke * StartCaptureSequence")
+    print()
+    print("This will automatically capture 7 screenshots from different angles:")
+    print("  - Front view")
+    print("  - Left/Right sides")
+    print("  - Top-down")
+    print("  - Diagonal overview")
+    print("  - Interior cockpit")
+    print("  - Close-up head")
+    print()
+    print(f"Screenshots save to: {PROJECT_ROOT / 'Saved' / 'Screenshots' / 'WindowsEditor'}")
+    print()
+    print("=" * 80)
+
 if __name__ == "__main__":
     # Run quick validation first
     quick_valid = quick_validation()
 
-    # Ask if user wants to run full Unreal tests
+    # Check for existing screenshots
+    screenshots = check_screenshots()
+    if screenshots:
+        print()
+        print(f"Found {len(screenshots)} recent screenshot(s):")
+        for i, screenshot in enumerate(screenshots[:5], 1):
+            age_seconds = (Path.ctime(screenshot) - Path.ctime(screenshot))
+            print(f"  {i}. {screenshot.name}")
+
+    # Ask what to do
     print()
     if not quick_valid:
         print("⚠️  Quick validation found issues!")
-        print("Do you still want to run full Unreal tests? (This will take longer)")
-        response = input("Run full tests? [y/N]: ").strip().lower()
-        if response != 'y':
-            print("Skipping full tests.")
-            sys.exit(1)
 
     print()
-    print("Note: Full Unreal tests require UnrealEditor-Cmd.exe and may take a while.")
-    print("If you just want quick validation, the checks above are sufficient.")
+    print("Options:")
+    print("  [V] Run quick validation again")
+    print("  [S] Show screenshot instructions")
+    print("  [T] Run full Unreal automation tests (slow)")
+    print("  [Q] Quit")
     print()
 
-    response = input("Run full Unreal automation tests? [y/N]: ").strip().lower()
-    if response == 'y':
+    response = input("Choice [V/s/t/q]: ").strip().lower() or 'v'
+
+    if response == 's':
+        print_screenshot_instructions()
+    elif response == 't':
         success = run_unreal_tests()
         sys.exit(0 if success else 1)
+    elif response == 'v':
+        sys.exit(0 if quick_valid else 1)
     else:
-        print("Skipping full tests.")
+        print("Exiting.")
         sys.exit(0 if quick_valid else 1)
