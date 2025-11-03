@@ -43,6 +43,9 @@ Content/ParagonHowitzer/Placeholder.txt
 asset_download_progress.txt
 nul
 
+# Unreal content (large binary assets stay outside git)
+Content/
+
 # Python cache
 __pycache__/
 *.pyc
