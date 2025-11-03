@@ -38,10 +38,11 @@ Content/HDRI/Downloaded/
 Content/Meshes/Downloaded/
 Content/ParagonHowitzer/Placeholder.txt
 
-# Logs
+# Logs and generated files
 *.log
-asset_download_progress.txt
-nul
+Tools/asset_download_progress.txt
+Tools/material_loading_code.txt
+Tools/asset_config.json
 
 # Unreal content (large binary assets stay outside git)
 Content/
