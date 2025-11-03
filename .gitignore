@@ -1,0 +1,46 @@
+# Unreal Engine gitignore
+
+# Compiled binaries
+Binaries/
+Plugins/*/Binaries/
+
+# Build files
+Build/
+Intermediate/
+DerivedDataCache/
+Saved/
+
+# Visual Studio files
+*.sln
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.db
+*.opendb
+*.VC.db
+*.VC.opendb
+
+# VS Code
+.vscode/
+.vs/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Mac
+.DS_Store
+
+# Asset downloads (large files)
+Content/Materials/Downloaded/
+Content/HDRI/Downloaded/
+Content/Meshes/Downloaded/
+
+# Logs
+*.log
+asset_download_progress.txt
+
+# Python cache
+__pycache__/
+*.pyc
