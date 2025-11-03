@@ -278,8 +278,8 @@ void UWeaponSystemComponent::ApplyWeaponEffects(int32 WeaponIndex, const FHitRes
 	// Apply damage if hit something
 	if (Hit.GetActor())
 	{
-		// TODO: Apply actual damage when damage system implemented
-		// UGameplayStatics::ApplyDamage(Hit.GetActor(), Weapon.Damage, GetOwner()->GetInstigatorController(), GetOwner(), UDamageType::StaticClass());
+		// Apply damage through Unreal's damage system
+		UGameplayStatics::ApplyDamage(Hit.GetActor(), Weapon.Damage, GetOwner()->GetInstigatorController(), GetOwner(), UDamageType::StaticClass());
 
 		OnWeaponHit.Broadcast(WeaponIndex, Hit.GetActor(), Weapon.Damage);
 

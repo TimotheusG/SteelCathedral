@@ -195,22 +195,33 @@ void APlayerMechPawn::HandleBoostPressed()
 
 float APlayerMechPawn::GetHeatPercentage() const
 {
-	// TODO: Implement with ReactorSystemComponent
-	// For now, return 0
+	if (ReactorSystem)
+	{
+		return ReactorSystem->GetHeatPercentage();
+	}
 	return 0.0f;
 }
 
 float APlayerMechPawn::GetPowerPercentage() const
 {
-	// TODO: Implement with ReactorSystemComponent
-	// For now, return 100%
+	if (ReactorSystem)
+	{
+		return ReactorSystem->GetPowerPercentage();
+	}
 	return 100.0f;
 }
 
 bool APlayerMechPawn::IsSystemOperational(const FString& SystemName) const
 {
-	// TODO: Implement with DamageManagementComponent
-	// For now, all systems are operational
+	// Note: This function uses string names for Blueprint compatibility
+	// For a more robust implementation, consider mapping system names to ESubsystemType
+	// For now, assume all systems operational unless DamageManagement indicates otherwise
+	if (DamageManagement)
+	{
+		// Could map string names to ESubsystemType enum values
+		// For basic implementation, return true if total integrity > 0
+		return DamageManagement->GetTotalIntegrityPercent() > 0.0f;
+	}
 	return true;
 }
 

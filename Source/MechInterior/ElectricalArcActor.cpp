@@ -8,6 +8,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "FireHazardActor.h"
 
 AElectricalArcActor::AElectricalArcActor()
 {
@@ -384,8 +385,19 @@ void AElectricalArcActor::AttemptFireIgnition()
 		// Spawn fire nearby
 		FVector FireLocation = GetActorLocation() + FMath::VRand() * 100.0f;
 
-		// TODO: Spawn AFireHazardActor at FireLocation
-		UE_LOG(LogTemp, Warning, TEXT("⚡ Electrical arc ignited fire at %s"), *FireLocation.ToString());
+		if (GetWorld())
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = GetOwner();
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			AActor* Fire = GetWorld()->SpawnActor<AFireHazardActor>(AFireHazardActor::StaticClass(), FireLocation, FRotator::ZeroRotator, SpawnParams);
+
+			if (Fire)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("⚡ Electrical arc ignited fire at %s"), *FireLocation.ToString());
+			}
+		}
 	}
 }
 

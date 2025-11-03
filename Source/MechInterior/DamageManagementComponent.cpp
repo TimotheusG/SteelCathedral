@@ -4,6 +4,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "FireHazardActor.h"
+#include "CoolantLeakActor.h"
+#include "ElectricalArcActor.h"
 
 UDamageManagementComponent::UDamageManagementComponent()
 {
@@ -429,23 +432,59 @@ EMechSection UDamageManagementComponent::GetSectionAtLocation(FVector WorldLocat
 
 void UDamageManagementComponent::SpawnFireHazard(FVector InteriorLocation)
 {
-	// TODO: Spawn AFireHazardActor when implemented
-	UE_LOG(LogTemp, Warning, TEXT("🔥 Fire hazard spawned at: %s"), *InteriorLocation.ToString());
-	OnHazardSpawned.Broadcast("Fire", InteriorLocation);
+	if (!GetWorld())
+		return;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = GetOwner();
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AActor* Hazard = GetWorld()->SpawnActor<AFireHazardActor>(AFireHazardActor::StaticClass(), InteriorLocation, FRotator::ZeroRotator, SpawnParams);
+
+	if (Hazard)
+	{
+		ActiveHazards.Add(Hazard);
+		UE_LOG(LogTemp, Warning, TEXT("🔥 Fire hazard spawned at: %s"), *InteriorLocation.ToString());
+		OnHazardSpawned.Broadcast("Fire", InteriorLocation);
+	}
 }
 
 void UDamageManagementComponent::SpawnCoolantLeak(FVector InteriorLocation)
 {
-	// TODO: Spawn ACoolantLeakActor when implemented
-	UE_LOG(LogTemp, Warning, TEXT("💧 Coolant leak spawned at: %s"), *InteriorLocation.ToString());
-	OnHazardSpawned.Broadcast("CoolantLeak", InteriorLocation);
+	if (!GetWorld())
+		return;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = GetOwner();
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AActor* Hazard = GetWorld()->SpawnActor<ACoolantLeakActor>(ACoolantLeakActor::StaticClass(), InteriorLocation, FRotator::ZeroRotator, SpawnParams);
+
+	if (Hazard)
+	{
+		ActiveHazards.Add(Hazard);
+		UE_LOG(LogTemp, Warning, TEXT("💧 Coolant leak spawned at: %s"), *InteriorLocation.ToString());
+		OnHazardSpawned.Broadcast("CoolantLeak", InteriorLocation);
+	}
 }
 
 void UDamageManagementComponent::SpawnElectricalArc(FVector InteriorLocation)
 {
-	// TODO: Spawn AElectricalArcActor when implemented
-	UE_LOG(LogTemp, Warning, TEXT("⚡ Electrical arc spawned at: %s"), *InteriorLocation.ToString());
-	OnHazardSpawned.Broadcast("ElectricalArc", InteriorLocation);
+	if (!GetWorld())
+		return;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = GetOwner();
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AActor* Hazard = GetWorld()->SpawnActor<AElectricalArcActor>(AElectricalArcActor::StaticClass(), InteriorLocation, FRotator::ZeroRotator, SpawnParams);
+
+	if (Hazard)
+	{
+		ActiveHazards.Add(Hazard);
+		UE_LOG(LogTemp, Warning, TEXT("⚡ Electrical arc spawned at: %s"), *InteriorLocation.ToString());
+		OnHazardSpawned.Broadcast("ElectricalArc", InteriorLocation);
+	}
 }
 
 // ============================================================
