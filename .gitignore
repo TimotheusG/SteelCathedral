@@ -44,3 +44,8 @@ asset_download_progress.txt
 # Python cache
 __pycache__/
 *.pyc
+
+# Secrets
+git_token.txt
+*.token
+*.secret
