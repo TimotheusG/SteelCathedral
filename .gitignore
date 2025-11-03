@@ -36,10 +36,12 @@ Saved/
 Content/Materials/Downloaded/
 Content/HDRI/Downloaded/
 Content/Meshes/Downloaded/
+Content/ParagonHowitzer/Placeholder.txt
 
 # Logs
 *.log
 asset_download_progress.txt
+nul
 
 # Python cache
 __pycache__/

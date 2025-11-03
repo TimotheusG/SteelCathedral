@@ -1,4 +1,4 @@
-# Steel Cathedral - Technical Design Document (TDD)
+﻿# Steel Cathedral - Technical Design Document (TDD)
 ## Version 1.0 | Unreal Engine 5 Implementation Reference
 
 ---
@@ -23,58 +23,58 @@
 ### 1.1 High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    GAME INSTANCE LAYER                       │
-│  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐ │
-│  │ CombatState    │  │ Audio Manager  │  │  VFX Manager  │ │
-│  │   Manager      │  │   Subsystem    │  │   Subsystem   │ │
-│  └────────────────┘  └────────────────┘  └───────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                      WORLD ACTOR LAYER                       │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │           PlayerMechPawn (Primary Actor)             │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐ │    │
-│  │  │  Movement    │  │   Weapons    │  │  Reactor  │ │    │
-│  │  │  Component   │  │  Component   │  │ Component │ │    │
-│  │  └──────────────┘  └──────────────┘  └───────────┘ │    │
-│  │  ┌──────────────────────────────────────────────┐   │    │
-│  │  │      Damage Management Component             │   │    │
-│  │  └──────────────────────────────────────────────┘   │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                              ↓                               │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │      InteriorEnvironmentActor (Nested)              │    │
-│  │  ┌────────────┐  ┌────────────┐  ┌──────────────┐  │    │
-│  │  │   Pilot    │  │   Gunner   │  │ Technician   │  │    │
-│  │  │  Station   │  │  Station   │  │  Character   │  │    │
-│  │  └────────────┘  └────────────┘  └──────────────┘  │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │              Hazard Manager Actor                    │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌─────────────────┐   │    │
-│  │  │   Fire   │  │ Coolant  │  │  Electrical     │   │    │
-│  │  │  Hazard  │  │   Leak   │  │    Arc          │   │    │
-│  │  └──────────┘  └──────────┘  └─────────────────┘   │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │              Enemy Actors                            │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌─────────────────┐   │    │
-│  │  │  Enemy   │  │  Kaiju   │  │  Swarm Unit     │   │    │
-│  │  │   Mech   │  │          │  │                 │   │    │
-│  │  └──────────┘  └──────────┘  └─────────────────┘   │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                    GAME INSTANCE LAYER                       â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”‚
+â”‚  â”‚ CombatState    â”‚  â”‚ Audio Manager  â”‚  â”‚  VFX Manager  â”‚ â”‚
+â”‚  â”‚   Manager      â”‚  â”‚   Subsystem    â”‚  â”‚   Subsystem   â”‚ â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                              â†“
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                      WORLD ACTOR LAYER                       â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
+â”‚  â”‚           PlayerMechPawn (Primary Actor)             â”‚    â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”‚    â”‚
+â”‚  â”‚  â”‚  Movement    â”‚  â”‚   Weapons    â”‚  â”‚  Reactor  â”‚ â”‚    â”‚
+â”‚  â”‚  â”‚  Component   â”‚  â”‚  Component   â”‚  â”‚ Component â”‚ â”‚    â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚    â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”‚    â”‚
+â”‚  â”‚  â”‚      Damage Management Component             â”‚   â”‚    â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                              â†“                               â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
+â”‚  â”‚      InteriorEnvironmentActor (Nested)              â”‚    â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚    â”‚
+â”‚  â”‚  â”‚   Pilot    â”‚  â”‚   Gunner   â”‚  â”‚ Technician   â”‚  â”‚    â”‚
+â”‚  â”‚  â”‚  Station   â”‚  â”‚  Station   â”‚  â”‚  Character   â”‚  â”‚    â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                                                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
+â”‚  â”‚              Hazard Manager Actor                    â”‚    â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”‚    â”‚
+â”‚  â”‚  â”‚   Fire   â”‚  â”‚ Coolant  â”‚  â”‚  Electrical     â”‚   â”‚    â”‚
+â”‚  â”‚  â”‚  Hazard  â”‚  â”‚   Leak   â”‚  â”‚    Arc          â”‚   â”‚    â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                                                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
+â”‚  â”‚              Enemy Actors                            â”‚    â”‚
+â”‚  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”‚    â”‚
+â”‚  â”‚  â”‚  Enemy   â”‚  â”‚  Kaiju   â”‚  â”‚  Swarm Unit     â”‚   â”‚    â”‚
+â”‚  â”‚  â”‚   Mech   â”‚  â”‚          â”‚  â”‚                 â”‚   â”‚    â”‚
+â”‚  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ### 1.2 Component Communication Flow
 
 ```
-Player Input → Station Actor → Component → Mech State Change →
-Broadcast Event → Other Components React → Visual/Audio Feedback
+Player Input â†’ Station Actor â†’ Component â†’ Mech State Change â†’
+Broadcast Event â†’ Other Components React â†’ Visual/Audio Feedback
 ```
 
 **Example Flow: Pilot Moves Mech**
@@ -1713,9 +1713,9 @@ bool FMechMovementTest::RunTest(const FString& Parameters)
 ### 9.2 Integration Testing
 
 **System Interaction Tests:**
-- Weapon fire → Heat generation → Reactor response
-- Damage received → Hazard spawn → Technician repair
-- Venting initiation → Power reduction → Weapon cooldown
+- Weapon fire â†’ Heat generation â†’ Reactor response
+- Damage received â†’ Hazard spawn â†’ Technician repair
+- Venting initiation â†’ Power reduction â†’ Weapon cooldown
 
 ### 9.3 Multiplayer Testing
 
@@ -1775,9 +1775,9 @@ bool FMechMovementTest::RunTest(const FString& Parameters)
 ### 10.2 Blueprint Organization
 
 **Graph Layout:**
-- Input events → Top-left
-- Main logic flow → Left to right
-- Helper functions → Collapsed to macros/functions
+- Input events â†’ Top-left
+- Main logic flow â†’ Left to right
+- Helper functions â†’ Collapsed to macros/functions
 - Comments for all major sections
 
 **Variable Categories:**
@@ -1812,7 +1812,61 @@ bool FMechMovementTest::RunTest(const FString& Parameters)
 
 ---
 
-## Appendix A: Quick Reference
+## Appendix A: Operational Snapshot
+
+### Current Build Status (2025-11-03)
+- **Movement System (MechMovementComponent)** - Walking, bracing, boosting, balance recovery, terrain modifiers, replicated on PlayerMechPawn.
+- **Reactor System (ReactorSystemComponent)** - Heat and power management with venting, automatic shutdown, subsystem allocation, and replicated telemetry consumed by pawn getters.
+- **Weapon System (WeaponSystemComponent)** - Four weapon families, ammo and cooldown tracking, alpha strike support, replicated damage via UGameplayStatics::ApplyDamage.
+- **Procedural Mech Geometry** - Generates the exterior shell and applies downloaded Poly Haven materials with dynamic instances plus safe fallbacks.
+- **Procedural Interior Geometry** - Builds the cockpit, reactor room, and corridors with collision-ready meshes attached to the pawn.
+- **Terrain Spawner** - Populates the 100 m x 100 m test arena with rubble prefabs and falls back to primitives when the pack is missing.
+
+### Damage and Hazard Components
+- **DamageManagementComponent** - Section-based integrity tracking (six regions), subsystem failure states, hazard spawn odds, and replicated events for UI and audio.
+- **FireHazardActor** - Four intensity tiers with damage over time, heat contribution, optional spreading, and extinguisher interaction hooks.
+- **CoolantLeakActor** - Reactor heat penalties, pressure build-up, seal and vent interactions, and cascading failure timers.
+- **ElectricalArcActor** - Short-range arcs that disrupt systems, chain to nearby fixtures, and expose repair entry points for the technician role.
+
+### Recommended Follow-Ups
+1. Bind player input to the component APIs so the prototype is immediately playable.
+2. Implement station enter and exit flow for Pilot, Gunner, and Technician.
+3. Add a lightweight HUD (heat, power, ammo, integrity) for at-a-glance telemetry.
+
+## Appendix B: Prototype Metrics
+
+### Scale Reference
+
+| Component | Height (cm) | Width (cm) | Depth (cm) |
+|-----------|-------------|------------|------------|
+| Full mech | 4200 | 800 | 600 |
+| Torso | 1000 | 800 | 600 |
+| Head / cockpit | 200 | 300 | 400 |
+| Each leg | 1600 | 200 | 200 |
+| Each arm | 600 | 150 | 150 |
+
+- Cockpit floor footprint: 600 cm x 500 cm; ceiling height 250 cm.
+- Forward viewport: 1500 cm x 800 cm located at (200, 0, 2500) in mech space.
+
+### Movement and Camera Defaults
+- MaxWalkSpeed: 800 cm/s (about 18 mph)
+- TurnRate: 30 deg/s
+- Acceleration / deceleration lerp factors: 2.0 / 3.0
+- Pilot camera field of view: 90 deg
+- Near clip plane: 10 cm to avoid cockpit clipping
+
+### Lighting Baseline
+- Directional light intensity 10 with warm daylight tint (255, 248, 220) and rotation (-50, 0, 0).
+- Skylight intensity 1.0 with cool tint (200, 220, 255).
+- Emergency interior lights: intensity 500, attenuation radius 400 cm, color red.
+- Console lights: intensity 300, attenuation radius 300 cm, color blue.
+
+### Color Targets
+- Exterior metal: RGB (50, 50, 55), Metallic 0.8, Roughness 0.6.
+- Interior floor: RGB (40, 40, 45); walls (60, 60, 65) with Metallic 0.3, Roughness 0.7.
+- Cockpit glass: Tint (200, 220, 255), Opacity 0.15, Refraction 1.02.
+
+## Appendix C: Code Quick Reference
 
 ### Common Event Bindings
 
@@ -1843,7 +1897,7 @@ void APlayerMechPawn::BeginPlay()
 ### Common RPC Patterns
 
 ```cpp
-// Client → Server → Multicast pattern
+// Client â†’ Server â†’ Multicast pattern
 // Example: Weapon firing
 
 // 1. Client calls
@@ -1891,3 +1945,5 @@ void Multicast_PlayWeaponFireEffects(FRotator FireRotation)
 ---
 
 *End of Technical Design Document*
+
+
