@@ -10,8 +10,10 @@ import os
 import json
 import time
 import sys
+import argparse
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from difflib import SequenceMatcher, get_close_matches
 
 # Fix Windows encoding issues
 if sys.platform == 'win32':
@@ -335,6 +337,150 @@ class AssetDownloader:
         self.log(f"📝 Full log: {LOG_FILE}")
         self.log("🔨 Next: Import textures in UE5 Content Browser")
 
+    def list_available_assets(self, asset_type="textures"):
+        """List all available assets from Poly Haven"""
+        self.log(f"\n🔍 Fetching available {asset_type} from Poly Haven...")
+
+        try:
+            url = f"https://api.polyhaven.com/assets?t={asset_type}"
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            assets = response.json()
+
+            asset_names = sorted(assets.keys())
+            self.log(f"\n📋 Found {len(asset_names)} {asset_type}:\n")
+
+            for i, name in enumerate(asset_names, 1):
+                info = assets[name]
+                categories = info.get('categories', [])
+                tags = info.get('tags', [])
+                self.log(f"  {i:3d}. {name:30s} [{', '.join(categories[:3])}]")
+
+            return asset_names
+
+        except Exception as e:
+            self.log(f"❌ Failed to fetch asset list: {e}")
+            return []
+
+    def search_assets(self, keyword, asset_type="textures"):
+        """Search for assets matching a keyword"""
+        self.log(f"\n🔍 Searching for '{keyword}' in {asset_type}...")
+
+        try:
+            url = f"https://api.polyhaven.com/assets?t={asset_type}"
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            assets = response.json()
+
+            # Search in name, categories, and tags
+            matches = []
+            keyword_lower = keyword.lower()
+
+            for name, info in assets.items():
+                name_lower = name.lower()
+                categories = [c.lower() for c in info.get('categories', [])]
+                tags = [t.lower() for t in info.get('tags', [])]
+
+                if (keyword_lower in name_lower or
+                    any(keyword_lower in cat for cat in categories) or
+                    any(keyword_lower in tag for tag in tags)):
+                    matches.append((name, info))
+
+            if matches:
+                self.log(f"\n✅ Found {len(matches)} matches:\n")
+                for i, (name, info) in enumerate(matches, 1):
+                    categories = info.get('categories', [])
+                    self.log(f"  {i:3d}. {name:30s} [{', '.join(categories[:3])}]")
+            else:
+                self.log(f"\n⚠️  No matches found for '{keyword}'")
+
+            return [name for name, _ in matches]
+
+        except Exception as e:
+            self.log(f"❌ Failed to search: {e}")
+            return []
+
+    def find_similar(self, material_name, asset_type="textures", n=5):
+        """Find assets with similar names using fuzzy matching"""
+        self.log(f"\n🔍 Finding similar names to '{material_name}'...")
+
+        try:
+            url = f"https://api.polyhaven.com/assets?t={asset_type}"
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            assets = response.json()
+
+            asset_names = list(assets.keys())
+
+            # Use difflib for fuzzy matching
+            similar = get_close_matches(material_name, asset_names, n=n, cutoff=0.3)
+
+            if similar:
+                self.log(f"\n✅ Found {len(similar)} similar names:\n")
+                for i, name in enumerate(similar, 1):
+                    info = assets[name]
+                    categories = info.get('categories', [])
+                    # Calculate similarity score
+                    ratio = SequenceMatcher(None, material_name, name).ratio()
+                    self.log(f"  {i}. {name:30s} (similarity: {ratio:.2%}) [{', '.join(categories[:2])}]")
+            else:
+                self.log(f"\n⚠️  No similar names found for '{material_name}'")
+
+            return similar
+
+        except Exception as e:
+            self.log(f"❌ Failed to find similar: {e}")
+            return []
+
+    def suggest_alternatives(self):
+        """Suggest alternatives for materials that weren't found"""
+        self.log("\n" + "="*60)
+        self.log("FINDING ALTERNATIVES FOR MISSING MATERIALS")
+        self.log("="*60)
+
+        missing_materials = []
+        for material in POLYHAVEN_MATERIALS:
+            material_dir = POLYHAVEN_DIR / material
+            if not material_dir.exists() or not any(material_dir.glob('*.jpg')):
+                missing_materials.append(material)
+
+        if not missing_materials:
+            self.log("\n✅ No missing materials!")
+            return
+
+        self.log(f"\nFound {len(missing_materials)} missing materials. Searching for alternatives...\n")
+
+        suggestions = {}
+        for material in missing_materials:
+            self.log(f"\n{'='*60}")
+            self.log(f"Material: {material}")
+            self.log(f"{'='*60}")
+
+            # Try exact search first
+            matches = self.search_assets(material.replace('_', ' '), "textures")
+            if not matches:
+                # Try fuzzy matching
+                matches = self.find_similar(material, "textures", n=3)
+
+            suggestions[material] = matches
+            time.sleep(0.5)  # Be nice to the API
+
+        # Write suggestions to file
+        suggestions_file = PROJECT_ROOT / "material_alternatives.txt"
+        with open(suggestions_file, 'w', encoding='utf-8') as f:
+            f.write("# Material Alternatives for Steel Cathedral\n\n")
+            for material, alternatives in suggestions.items():
+                f.write(f"## {material}\n")
+                if alternatives:
+                    f.write("Suggested alternatives:\n")
+                    for alt in alternatives:
+                        f.write(f"  - {alt}\n")
+                else:
+                    f.write("  No alternatives found - try manual search\n")
+                f.write("\n")
+
+        self.log(f"\n✅ Suggestions written to: {suggestions_file}")
+
     def run(self):
         """Main execution"""
         try:
@@ -368,6 +514,54 @@ class AssetDownloader:
         finally:
             self.log_file.close()
 
-if __name__ == "__main__":
+def main():
+    """Main entry point with command-line argument parsing"""
+    parser = argparse.ArgumentParser(
+        description="Steel Cathedral Asset Downloader - Download and discover Poly Haven assets",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  py download_assets.py                          # Normal download mode
+  py download_assets.py --list                   # List all available textures
+  py download_assets.py --list --type hdris      # List all available HDRIs
+  py download_assets.py --search metal           # Search for materials with 'metal'
+  py download_assets.py --similar scratched_metal # Find similar names
+  py download_assets.py --suggest                # Suggest alternatives for missing materials
+        """
+    )
+
+    parser.add_argument('--list', action='store_true',
+                        help='List all available assets')
+    parser.add_argument('--search', type=str, metavar='KEYWORD',
+                        help='Search for assets matching keyword')
+    parser.add_argument('--similar', type=str, metavar='NAME',
+                        help='Find assets with similar names')
+    parser.add_argument('--suggest', action='store_true',
+                        help='Suggest alternatives for missing materials')
+    parser.add_argument('--type', type=str, default='textures',
+                        choices=['textures', 'hdris'],
+                        help='Asset type to search (default: textures)')
+    parser.add_argument('--count', type=int, default=5, metavar='N',
+                        help='Number of similar results to show (default: 5)')
+
+    args = parser.parse_args()
+
     downloader = AssetDownloader()
-    downloader.run()
+
+    # Handle different modes
+    if args.list:
+        downloader.list_available_assets(args.type)
+    elif args.search:
+        downloader.search_assets(args.search, args.type)
+    elif args.similar:
+        downloader.find_similar(args.similar, args.type, args.count)
+    elif args.suggest:
+        downloader.suggest_alternatives()
+    else:
+        # Default: run normal download
+        downloader.run()
+
+    downloader.log_file.close()
+
+if __name__ == "__main__":
+    main()
