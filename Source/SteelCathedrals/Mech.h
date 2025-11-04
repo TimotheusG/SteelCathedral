@@ -16,6 +16,7 @@ class USkeletalMeshComponent;
 class UCapsuleComponent;
 class UProceduralMechGeometry;
 class AProceduralInteriorGeometry;
+class AMechStation;
 
 /**
  * Main mech pawn (supports up to 3 crew members in multiplayer)
@@ -137,6 +138,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mech|Input")
 	void HandleBoostPressed();
 
+	/** Register the pilot station currently controlling this mech */
+	void SetActivePilotStation(AMechStation* Station);
+
+	/** Clear the active pilot station reference if it matches */
+	void ClearActivePilotStation(AMechStation* Station);
+
 	// ============================================================
 	// Accessors
 	// ============================================================
@@ -191,4 +198,9 @@ protected:
 	void InputTurn(float Value);
 	void InputLookUp(float Value);
 	void InputFireWeapon();
+	void HandleInteractPressed();
+
+	/** Active pilot station reference (used for exiting while controlling the mech) */
+	UPROPERTY()
+	AMechStation* ActivePilotStation = nullptr;
 };

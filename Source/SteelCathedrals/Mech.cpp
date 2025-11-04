@@ -7,6 +7,7 @@
 #include "DamageManagementComponent.h"
 #include "ProceduralMechGeometry.h"
 #include "ProceduralInteriorGeometry.h"
+#include "MechStation.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -126,6 +127,7 @@ void AMech::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		PlayerInputComponent->BindAction("Brace", IE_Pressed, this, &AMech::HandleBracePressed);
 		PlayerInputComponent->BindAction("Boost", IE_Pressed, this, &AMech::HandleBoostPressed);
 		PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMech::InputFireWeapon);
+		PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AMech::HandleInteractPressed);
 
 		UE_LOG(LogTemp, Warning, TEXT("✅ Mech input bindings configured"));
 	}
@@ -197,6 +199,27 @@ void AMech::HandleBoostPressed()
 		// Boost in forward direction
 		FVector BoostDirection = GetActorForwardVector();
 		MechMovement->ActivateBoost(BoostDirection);
+	}
+}
+
+void AMech::HandleInteractPressed()
+{
+	if (ActivePilotStation)
+	{
+		ActivePilotStation->LeaveStation();
+	}
+}
+
+void AMech::SetActivePilotStation(AMechStation* Station)
+{
+	ActivePilotStation = Station;
+}
+
+void AMech::ClearActivePilotStation(AMechStation* Station)
+{
+	if (ActivePilotStation == Station)
+	{
+		ActivePilotStation = nullptr;
 	}
 }
 

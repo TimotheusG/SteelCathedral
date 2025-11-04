@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "ReactorSystemComponent.h"
 
 UWeaponSystemComponent::UWeaponSystemComponent()
 {
@@ -179,8 +180,17 @@ void UWeaponSystemComponent::ExecuteWeaponFire(int32 WeaponIndex)
 	// Broadcast event
 	OnWeaponFired.Broadcast(WeaponIndex, Weapon);
 
-	// Generate heat (will be handled by reactor system)
-	// ReactorSystem->AddHeat(Weapon.HeatPerShot);
+	// Generate heat through the reactor system if present on the owning actor
+	if (Weapon.HeatPerShot > 0.0f)
+	{
+		if (AActor* OwnerActor = GetOwner())
+		{
+			if (UReactorSystemComponent* Reactor = OwnerActor->FindComponentByClass<UReactorSystemComponent>())
+			{
+				Reactor->AddHeat(Weapon.HeatPerShot);
+			}
+		}
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("Fired %s | Ammo: %d/%d | Hit: %s"),
 	       *Weapon.WeaponName,

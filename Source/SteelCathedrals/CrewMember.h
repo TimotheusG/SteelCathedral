@@ -70,4 +70,10 @@ public:
 	/** Leave current station */
 	UFUNCTION(BlueprintCallable, Category = "Station")
 	void LeaveStation();
+
+	/** Primary station action pressed (e.g., fire weapons) */
+	void HandlePrimaryActionPressed();
+
+	/** Primary station action released */
+	void HandlePrimaryActionReleased();
 };

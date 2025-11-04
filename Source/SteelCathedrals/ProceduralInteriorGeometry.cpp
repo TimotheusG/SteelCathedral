@@ -4,6 +4,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "MechStation.h"
 #include "FireHazardActor.h"
+#include "Components/PointLightComponent.h"
 
 AProceduralInteriorGeometry::AProceduralInteriorGeometry()
 {
@@ -50,6 +51,7 @@ void AProceduralInteriorGeometry::GenerateInterior()
 
 	// Detailed components
 	Consoles = NewObject<UProceduralMeshComponent>(this, TEXT("Consoles"));
+	ConsoleScreens = NewObject<UProceduralMeshComponent>(this, TEXT("ConsoleScreens"));
 	FloorGrating = NewObject<UProceduralMeshComponent>(this, TEXT("FloorGrating"));
 	WallPanels = NewObject<UProceduralMeshComponent>(this, TEXT("WallPanels"));
 	Reactor = NewObject<UProceduralMeshComponent>(this, TEXT("Reactor"));
@@ -77,6 +79,9 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	Consoles->RegisterComponent();
 	Consoles->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
+	ConsoleScreens->RegisterComponent();
+	ConsoleScreens->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
 	FloorGrating->RegisterComponent();
 	FloorGrating->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
@@ -97,6 +102,7 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	ReactorRoom->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Corridors->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Consoles->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ConsoleScreens->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FloorGrating->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	WallPanels->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Reactor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -110,6 +116,7 @@ void AProceduralInteriorGeometry::GenerateInterior()
 
 	// Create detailed geometry
 	CreateConsoleGeometry();
+	CreateConsoleScreenGeometry();
 	CreateFloorGratingGeometry();
 	CreateWallPanelsGeometry();
 	CreateReactorGeometry();
@@ -120,6 +127,7 @@ void AProceduralInteriorGeometry::GenerateInterior()
 	{
 		SpawnStations();
 		SpawnTestHazards();
+		SpawnLights();
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Interior generated successfully!"));
@@ -274,6 +282,7 @@ void AProceduralInteriorGeometry::ClearInterior()
 	if (ReactorRoom) { ReactorRoom->DestroyComponent(); ReactorRoom = nullptr; }
 	if (Corridors) { Corridors->DestroyComponent(); Corridors = nullptr; }
 	if (Consoles) { Consoles->DestroyComponent(); Consoles = nullptr; }
+	if (ConsoleScreens) { ConsoleScreens->DestroyComponent(); ConsoleScreens = nullptr; }
 	if (FloorGrating) { FloorGrating->DestroyComponent(); FloorGrating = nullptr; }
 	if (WallPanels) { WallPanels->DestroyComponent(); WallPanels = nullptr; }
 	if (Reactor) { Reactor->DestroyComponent(); Reactor = nullptr; }
@@ -581,13 +590,68 @@ void AProceduralInteriorGeometry::CreateConsoleGeometry()
 
 	Consoles->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
 
-	// Apply material
+	// Apply material - brighter for visibility
 	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
 	if (BaseMaterial)
 	{
 		UMaterialInstanceDynamic* ConsoleMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
-		ConsoleMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.15f, 0.18f, 0.22f, 1.0f));
+		ConsoleMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.4f, 0.45f, 0.5f, 1.0f)); // Lighter grey
 		Consoles->SetMaterial(0, ConsoleMat);
+	}
+}
+
+void AProceduralInteriorGeometry::CreateConsoleScreenGeometry()
+{
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FLinearColor> VertexColors;
+	TArray<FProcMeshTangent> Tangents;
+
+	FVector ScreenSize = FVector(1, 50, 40) * InteriorScale; // Thin vertical screens
+
+	// Pilot screen - cyan
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		FVector(-200, -150, 100) * InteriorScale + FVector(-ScreenSize.X/2, -ScreenSize.Y/2, 0),
+		FVector(-200, -150, 100) * InteriorScale + FVector(-ScreenSize.X/2, ScreenSize.Y/2, 0),
+		FVector(-200, -150, 100) * InteriorScale + FVector(-ScreenSize.X/2, ScreenSize.Y/2, ScreenSize.Z),
+		FVector(-200, -150, 100) * InteriorScale + FVector(-ScreenSize.X/2, -ScreenSize.Y/2, ScreenSize.Z),
+		FVector(-1, 0, 0));
+
+	// Gunner screen - cyan
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		FVector(-200, 150, 100) * InteriorScale + FVector(-ScreenSize.X/2, -ScreenSize.Y/2, 0),
+		FVector(-200, 150, 100) * InteriorScale + FVector(-ScreenSize.X/2, ScreenSize.Y/2, 0),
+		FVector(-200, 150, 100) * InteriorScale + FVector(-ScreenSize.X/2, ScreenSize.Y/2, ScreenSize.Z),
+		FVector(-200, 150, 100) * InteriorScale + FVector(-ScreenSize.X/2, -ScreenSize.Y/2, ScreenSize.Z),
+		FVector(-1, 0, 0));
+
+	// Tech screen - orange
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		FVector(150, -150, 100) * InteriorScale + FVector(ScreenSize.X/2, -ScreenSize.Y/2, 0),
+		FVector(150, -150, 100) * InteriorScale + FVector(ScreenSize.X/2, ScreenSize.Y/2, 0),
+		FVector(150, -150, 100) * InteriorScale + FVector(ScreenSize.X/2, ScreenSize.Y/2, ScreenSize.Z),
+		FVector(150, -150, 100) * InteriorScale + FVector(ScreenSize.X/2, -ScreenSize.Y/2, ScreenSize.Z),
+		FVector(1, 0, 0));
+
+	// Nav screen - orange
+	AddQuad(Vertices, Triangles, Normals, UVs,
+		FVector(150, 150, 100) * InteriorScale + FVector(ScreenSize.X/2, -ScreenSize.Y/2, 0),
+		FVector(150, 150, 100) * InteriorScale + FVector(ScreenSize.X/2, ScreenSize.Y/2, 0),
+		FVector(150, 150, 100) * InteriorScale + FVector(ScreenSize.X/2, ScreenSize.Y/2, ScreenSize.Z),
+		FVector(150, 150, 100) * InteriorScale + FVector(ScreenSize.X/2, -ScreenSize.Y/2, ScreenSize.Z),
+		FVector(1, 0, 0));
+
+	ConsoleScreens->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+
+	// Glowing material
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+	if (BaseMaterial)
+	{
+		UMaterialInstanceDynamic* ScreenMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+		ScreenMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.5f, 1.5f, 2.0f, 1.0f)); // Bright cyan glow
+		ConsoleScreens->SetMaterial(0, ScreenMat);
 	}
 }
 
@@ -794,4 +858,51 @@ void AProceduralInteriorGeometry::CreateCatwalkGeometry()
 		CatwalkMat->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.35f, 0.35f, 0.37f, 1.0f));
 		Catwalks->SetMaterial(0, CatwalkMat);
 	}
+}
+
+void AProceduralInteriorGeometry::SpawnLights()
+{
+	// Clear existing lights
+	for (UPointLightComponent* Light : InteriorLights)
+	{
+		if (Light)
+		{
+			Light->DestroyComponent();
+		}
+	}
+	InteriorLights.Empty();
+
+	auto CreateLight = [this](FVector Position, FLinearColor Color, float Intensity, float Radius) -> UPointLightComponent*
+	{
+		UPointLightComponent* Light = NewObject<UPointLightComponent>(this);
+		Light->RegisterComponent();
+		Light->AttachToComponent(InteriorRoot, FAttachmentTransformRules::KeepRelativeTransform);
+		Light->SetRelativeLocation(Position);
+		Light->SetLightColor(Color);
+		Light->SetIntensity(Intensity);
+		Light->SetAttenuationRadius(Radius);
+		Light->SetCastShadows(false); // Performance
+		InteriorLights.Add(Light);
+		return Light;
+	};
+
+	// Overhead cockpit lights (white/cool) - BRIGHTER
+	CreateLight(FVector(0, 0, 220) * InteriorScale, FLinearColor(0.9f, 0.95f, 1.0f), 8000.0f, 800.0f * InteriorScale);
+	CreateLight(FVector(-150, -150, 200) * InteriorScale, FLinearColor(0.85f, 0.9f, 1.0f), 5000.0f, 600.0f * InteriorScale);
+	CreateLight(FVector(-150, 150, 200) * InteriorScale, FLinearColor(0.85f, 0.9f, 1.0f), 5000.0f, 600.0f * InteriorScale);
+
+	// Console accent lights (cyan + orange) - STRONGER
+	CreateLight(FVector(-200, -150, 90) * InteriorScale, FLinearColor(0.3f, 0.9f, 1.0f), 3000.0f, 400.0f * InteriorScale);
+	CreateLight(FVector(-200, 150, 90) * InteriorScale, FLinearColor(0.3f, 0.9f, 1.0f), 3000.0f, 400.0f * InteriorScale);
+	CreateLight(FVector(150, -150, 90) * InteriorScale, FLinearColor(1.0f, 0.7f, 0.3f), 3000.0f, 400.0f * InteriorScale);
+	CreateLight(FVector(150, 150, 90) * InteriorScale, FLinearColor(1.0f, 0.7f, 0.3f), 3000.0f, 400.0f * InteriorScale);
+
+	// Reactor glow (bright blue)
+	CreateLight(FVector(-800, 0, 150) * InteriorScale, FLinearColor(0.3f, 0.7f, 1.0f), 8000.0f, 1000.0f * InteriorScale);
+
+	// Emergency strip lights (dim red)
+	CreateLight(FVector(-300, 0, 10) * InteriorScale, FLinearColor(1.0f, 0.1f, 0.1f), 500.0f, 400.0f * InteriorScale);
+	CreateLight(FVector(300, 0, 10) * InteriorScale, FLinearColor(1.0f, 0.1f, 0.1f), 500.0f, 400.0f * InteriorScale);
+
+	UE_LOG(LogTemp, Warning, TEXT("💡 Spawned %d interior lights"), InteriorLights.Num());
 }

@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "MechStation.generated.h"
 
 class AMech;
 class UBoxComponent;
+class UCharacterMovementComponent;
 
 /**
  * Station types in the mech
@@ -99,6 +101,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Station")
 	bool IsPlayerInRange(APawn* Player) const;
 
+	/** Station-specific primary action (e.g., fire weapons) */
+	void HandlePrimaryActionPressed(APawn* User);
+
+	/** Station-specific primary action release */
+	void HandlePrimaryActionReleased(APawn* User);
+
 	// ============================================================
 	// Events
 	// ============================================================
@@ -162,4 +170,11 @@ private:
 	/** Store the player controller */
 	UPROPERTY()
 	APlayerController* StationController;
+
+	/** Cached movement component for restoring mobility when leaving station */
+	UPROPERTY()
+	UCharacterMovementComponent* CachedMovementComponent = nullptr;
+
+	/** Cached movement mode prior to disabling movement */
+	TEnumAsByte<EMovementMode> CachedMovementMode = MOVE_Walking;
 };

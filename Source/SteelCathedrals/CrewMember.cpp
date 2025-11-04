@@ -6,6 +6,8 @@
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "MechStation.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 
 ACrewMember::ACrewMember()
 {
@@ -73,6 +75,11 @@ void ACrewMember::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	// Bind station interaction
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ACrewMember::InteractWithStation);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ACrewMember::HandlePrimaryActionPressed);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ACrewMember::HandlePrimaryActionReleased);
+
 	UE_LOG(LogTemp, Warning, TEXT("CrewMember input configured (WASD + Mouse)"));
 }
 
@@ -130,23 +137,104 @@ void ACrewMember::LookUp(float Value)
 
 void ACrewMember::InteractWithStation()
 {
-	// TODO: Implement station interaction
-	// - Raycast forward to find nearby AMechStation
-	// - If found, call station->ActivateStation(this)
-	// - Lock player to station position
-	// - Switch controls to operate HULL systems
-	UE_LOG(LogTemp, Warning, TEXT("Station interaction not yet implemented"));
+	// If already seated, pressing interact leaves the current station
+	if (CurrentStation)
+	{
+		LeaveStation();
+		return;
+	}
+
+	const float InteractionRange = 300.0f;
+
+	// Determine view origin/direction (camera if available)
+	const FVector ViewLocation = FirstPersonCamera ? FirstPersonCamera->GetComponentLocation() : GetActorLocation();
+	const FVector ViewDirection = FirstPersonCamera ? FirstPersonCamera->GetForwardVector() : GetActorForwardVector();
+
+	AMechStation* SelectedStation = nullptr;
+
+	// Try a forward line trace first for precise interaction
+	if (UWorld* World = GetWorld())
+	{
+		FHitResult Hit;
+		const FVector End = ViewLocation + (ViewDirection * InteractionRange);
+		FCollisionQueryParams Params(TEXT("CrewStationTrace"), false, this);
+
+		if (World->LineTraceSingleByChannel(Hit, ViewLocation, End, ECC_Visibility, Params))
+		{
+			SelectedStation = Cast<AMechStation>(Hit.GetActor());
+
+			if (!SelectedStation && Hit.GetComponent())
+			{
+				SelectedStation = Cast<AMechStation>(Hit.GetComponent()->GetOwner());
+			}
+
+			if (SelectedStation && !SelectedStation->CanUseStation(this))
+			{
+				SelectedStation = nullptr;
+			}
+		}
+
+		// Fall back to nearest station within range (overlap-based)
+		if (!SelectedStation)
+		{
+			float BestDistSq = InteractionRange * InteractionRange;
+
+			for (TActorIterator<AMechStation> It(World); It; ++It)
+			{
+				AMechStation* Station = *It;
+				if (!Station->CanUseStation(this))
+				{
+					continue;
+				}
+
+				if (!Station->IsPlayerInRange(this))
+				{
+					continue;
+				}
+
+				const float DistSq = FVector::DistSquared(Station->GetActorLocation(), GetActorLocation());
+				if (DistSq <= BestDistSq)
+				{
+					BestDistSq = DistSq;
+					SelectedStation = Station;
+				}
+			}
+		}
+	}
+
+	if (SelectedStation)
+	{
+		SelectedStation->UseStation(this);
+		CurrentStation = SelectedStation;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("No mech station in range to interact with"));
+	}
 }
 
 void ACrewMember::LeaveStation()
 {
 	if (CurrentStation)
 	{
-		// TODO: Implement leaving station
-		// - Call station->DeactivateStation()
-		// - Unlock player from station
-		// - Restore normal movement controls
+		CurrentStation->HandlePrimaryActionReleased(this);
+		CurrentStation->LeaveStation();
 		CurrentStation = nullptr;
-		UE_LOG(LogTemp, Warning, TEXT("Left station"));
+	}
+}
+
+void ACrewMember::HandlePrimaryActionPressed()
+{
+	if (CurrentStation)
+	{
+		CurrentStation->HandlePrimaryActionPressed(this);
+	}
+}
+
+void ACrewMember::HandlePrimaryActionReleased()
+{
+	if (CurrentStation)
+	{
+		CurrentStation->HandlePrimaryActionReleased(this);
 	}
 }

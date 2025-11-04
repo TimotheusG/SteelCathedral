@@ -79,6 +79,9 @@ public:
 	UProceduralMeshComponent* Consoles;
 
 	UPROPERTY()
+	UProceduralMeshComponent* ConsoleScreens;
+
+	UPROPERTY()
 	UProceduralMeshComponent* FloorGrating;
 
 	UPROPERTY()
@@ -97,6 +100,10 @@ public:
 	// Spawned hazards for testing
 	UPROPERTY()
 	TArray<class AFireHazardActor*> TestHazards;
+
+	// Interior lights
+	UPROPERTY()
+	TArray<class UPointLightComponent*> InteriorLights;
 
 	// ============================================================
 	// Generation Functions
@@ -120,6 +127,7 @@ private:
 
 	// New detailed geometry methods
 	void CreateConsoleGeometry();
+	void CreateConsoleScreenGeometry();
 	void CreateFloorGratingGeometry();
 	void CreateWallPanelsGeometry();
 	void CreateReactorGeometry();
@@ -130,6 +138,9 @@ private:
 
 	// Spawn test hazards for debugging
 	void SpawnTestHazards();
+
+	// Spawn interior lighting
+	void SpawnLights();
 
 private:
 	// Helper methods

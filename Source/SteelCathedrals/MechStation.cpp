@@ -2,12 +2,17 @@
 
 #include "MechStation.h"
 #include "Mech.h"
+#include "CrewMember.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "EngineUtils.h"
+#include "WeaponSystemComponent.h"
+#include "ReactorSystemComponent.h"
+#include "Engine/Engine.h"
 
 AMechStation::AMechStation()
 {
@@ -85,6 +90,11 @@ void AMechStation::UseStation(APawn* User)
 	bIsOccupied = true;
 	CurrentUser = User;
 
+	if (ACrewMember* Crew = Cast<ACrewMember>(User))
+	{
+		Crew->CurrentStation = this;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("✅ Player using %s station"), *StationName);
 
 	// Get player controller
@@ -96,7 +106,14 @@ void AMechStation::UseStation(APawn* User)
 	ACharacter* Character = Cast<ACharacter>(User);
 	if (Character)
 	{
-		Character->DisableInput(PC);
+		CachedMovementComponent = Character->GetCharacterMovement();
+		if (CachedMovementComponent)
+		{
+			CachedMovementMode = CachedMovementComponent->MovementMode;
+			CachedMovementComponent->StopMovementImmediately();
+			CachedMovementComponent->DisableMovement();
+		}
+
 		// Store original camera
 		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
 		{
@@ -125,6 +142,7 @@ void AMechStation::UseStation(APawn* User)
 		if (OwningMech)
 		{
 			PC->Possess(OwningMech);
+			OwningMech->SetActivePilotStation(this);
 			UE_LOG(LogTemp, Warning, TEXT("✅ Controller now possessing mech - input routing active"));
 
 			// Position camera at station location (inside mech)
@@ -161,6 +179,8 @@ void AMechStation::LeaveStation()
 	if (!bIsOccupied || !CurrentUser)
 		return;
 
+	HandlePrimaryActionReleased(CurrentUser);
+
 	UE_LOG(LogTemp, Warning, TEXT("Player left %s station"), *StationName);
 
 	// Return control to original pawn if we possessed the mech
@@ -179,6 +199,11 @@ void AMechStation::LeaveStation()
 		ACharacter* Character = Cast<ACharacter>(OriginalPawn ? OriginalPawn : CurrentUser);
 		if (Character)
 		{
+			if (CachedMovementComponent)
+			{
+				CachedMovementComponent->SetMovementMode(CachedMovementMode);
+			}
+
 			Character->EnableInput(StationController);
 
 			// Restore original camera
@@ -195,10 +220,21 @@ void AMechStation::LeaveStation()
 
 	// Clear state
 	APawn* PreviousUser = CurrentUser;
+	if (ACrewMember* Crew = Cast<ACrewMember>(PreviousUser))
+	{
+		Crew->CurrentStation = nullptr;
+	}
+
 	CurrentUser = nullptr;
 	bIsOccupied = false;
 	OriginalPawn = nullptr;
 	StationController = nullptr;
+	CachedMovementComponent = nullptr;
+
+	if (OwningMech)
+	{
+		OwningMech->ClearActivePilotStation(this);
+	}
 }
 
 bool AMechStation::IsPlayerInRange(APawn* Player) const
@@ -227,7 +263,11 @@ void AMechStation::OnInteractionVolumeBeginOverlap(UPrimitiveComponent* Overlapp
 
 	OnPlayerEnterRange.Broadcast(Player);
 
-	// TODO: Show UI prompt "Press E to use Pilot Console"
+	if (GEngine)
+	{
+		const FString Prompt = FString::Printf(TEXT("%s: %s"), *StationName, *InteractionPrompt);
+		GEngine->AddOnScreenDebugMessage(reinterpret_cast<uint64>(this), 5.0f, FColor::Green, Prompt);
+	}
 }
 
 void AMechStation::OnInteractionVolumeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -244,5 +284,71 @@ void AMechStation::OnInteractionVolumeEndOverlap(UPrimitiveComponent* Overlapped
 
 	OnPlayerLeaveRange.Broadcast(Player);
 
-	// TODO: Hide UI prompt
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(reinterpret_cast<uint64>(this), 1.0f, FColor::Silver,
+			FString::Printf(TEXT("Left %s interaction range"), *StationName));
+	}
+}
+
+void AMechStation::HandlePrimaryActionPressed(APawn* User)
+{
+	if (!bIsOccupied || User != CurrentUser || !OwningMech)
+	{
+		return;
+	}
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(reinterpret_cast<uint64>(this) + 1, 2.0f, FColor::Cyan,
+			FString::Printf(TEXT("%s station action"), *UEnum::GetValueAsString(StationType)));
+	}
+
+	switch (StationType)
+	{
+	case EStationType::Gunner:
+		if (UWeaponSystemComponent* WeaponSystem = OwningMech->WeaponSystem)
+		{
+			WeaponSystem->FireWeapon();
+		}
+		break;
+
+	case EStationType::Technician:
+		if (UReactorSystemComponent* Reactor = OwningMech->ReactorSystem)
+		{
+			Reactor->InitiateVenting();
+
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(reinterpret_cast<uint64>(this) + 2, 3.0f, FColor::Orange,
+					TEXT("Reactor venting initiated"));
+			}
+		}
+		break;
+
+	default:
+		break;
+	}
+}
+
+void AMechStation::HandlePrimaryActionReleased(APawn* User)
+{
+	if (!bIsOccupied || User != CurrentUser || !OwningMech)
+	{
+		return;
+	}
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(reinterpret_cast<uint64>(this) + 1, 1.0f, FColor::Silver,
+			FString::Printf(TEXT("%s action released"), *UEnum::GetValueAsString(StationType)));
+	}
+
+	if (StationType == EStationType::Gunner)
+	{
+		if (UWeaponSystemComponent* WeaponSystem = OwningMech->WeaponSystem)
+		{
+			WeaponSystem->StopFiring();
+		}
+	}
 }
