@@ -196,7 +196,7 @@ void ASteelCathedralsGameMode::StartPlay()
 				SpawnTransform.GetRotation().Rotator()
 			);
 
-			UE_LOG(LogTemp, Warning, TEXT("  ✅ Crew %d positioned at: %s"),
+			UE_LOG(LogTemp, Warning, TEXT("  Crew %d positioned at: %s"),
 				PlayerIndex + 1,
 				*SpawnTransform.GetLocation().ToString());
 
@@ -204,6 +204,6 @@ void ASteelCathedralsGameMode::StartPlay()
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("✅ Positioned %d crew member(s) in cockpit"), PlayerIndex);
+	UE_LOG(LogTemp, Warning, TEXT("Positioned %d crew member(s) in cockpit"), PlayerIndex);
 
 }

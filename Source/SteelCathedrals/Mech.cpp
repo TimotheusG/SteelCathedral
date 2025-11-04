@@ -73,7 +73,7 @@ void AMech::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("🤖 Mech BeginPlay - Location: %s, Height: %f cm"),
+	UE_LOG(LogTemp, Warning, TEXT("Mech BeginPlay - Location: %s, Height: %f cm"),
 		*GetActorLocation().ToString(), MechHeight);
 
 	// Spawn INTERIOR environment inside the mech head/cockpit
@@ -129,7 +129,7 @@ void AMech::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMech::InputFireWeapon);
 		PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AMech::HandleInteractPressed);
 
-		UE_LOG(LogTemp, Warning, TEXT("✅ Mech input bindings configured"));
+		UE_LOG(LogTemp, Warning, TEXT("Mech input bindings configured"));
 	}
 }
 

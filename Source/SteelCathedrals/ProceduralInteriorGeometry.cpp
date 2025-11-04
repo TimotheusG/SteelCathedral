@@ -189,7 +189,7 @@ void AProceduralInteriorGeometry::SpawnStations()
 		PilotStation->StationName = "Pilot Console";
 		PilotStation->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Stations.Add(PilotStation);
-		UE_LOG(LogTemp, Warning, TEXT("✅ Spawned Pilot Station"));
+		UE_LOG(LogTemp, Warning, TEXT("Spawned Pilot Station"));
 	}
 
 	// Gunner station - front right
@@ -205,7 +205,7 @@ void AProceduralInteriorGeometry::SpawnStations()
 		GunnerStation->StationName = "Gunner Console";
 		GunnerStation->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Stations.Add(GunnerStation);
-		UE_LOG(LogTemp, Warning, TEXT("✅ Spawned Gunner Station"));
+		UE_LOG(LogTemp, Warning, TEXT("Spawned Gunner Station"));
 	}
 
 	// Technician station - back left
@@ -221,7 +221,7 @@ void AProceduralInteriorGeometry::SpawnStations()
 		TechStation->StationName = "Technician Console";
 		TechStation->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Stations.Add(TechStation);
-		UE_LOG(LogTemp, Warning, TEXT("✅ Spawned Technician Station"));
+		UE_LOG(LogTemp, Warning, TEXT("Spawned Technician Station"));
 	}
 
 	// Navigation station - back right
@@ -237,10 +237,10 @@ void AProceduralInteriorGeometry::SpawnStations()
 		NavStation->StationName = "Navigation Console";
 		NavStation->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Stations.Add(NavStation);
-		UE_LOG(LogTemp, Warning, TEXT("✅ Spawned Navigation Station"));
+		UE_LOG(LogTemp, Warning, TEXT("Spawned Navigation Station"));
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("🎮 Spawned %d stations in cockpit"), Stations.Num());
+	UE_LOG(LogTemp, Warning, TEXT("Spawned %d stations in cockpit"), Stations.Num());
 }
 
 void AProceduralInteriorGeometry::SpawnTestHazards()
@@ -269,7 +269,7 @@ void AProceduralInteriorGeometry::SpawnTestHazards()
 	{
 		TestFire->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		TestHazards.Add(TestFire);
-		UE_LOG(LogTemp, Warning, TEXT("🔥 Spawned test fire hazard"));
+		UE_LOG(LogTemp, Warning, TEXT("Spawned test fire hazard"));
 	}
 }
 
@@ -904,5 +904,5 @@ void AProceduralInteriorGeometry::SpawnLights()
 	CreateLight(FVector(-300, 0, 10) * InteriorScale, FLinearColor(1.0f, 0.1f, 0.1f), 500.0f, 400.0f * InteriorScale);
 	CreateLight(FVector(300, 0, 10) * InteriorScale, FLinearColor(1.0f, 0.1f, 0.1f), 500.0f, 400.0f * InteriorScale);
 
-	UE_LOG(LogTemp, Warning, TEXT("💡 Spawned %d interior lights"), InteriorLights.Num());
+	UE_LOG(LogTemp, Warning, TEXT("Spawned %d interior lights"), InteriorLights.Num());
 }

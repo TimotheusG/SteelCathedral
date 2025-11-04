@@ -95,7 +95,7 @@ void AMechStation::UseStation(APawn* User)
 		Crew->CurrentStation = this;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("✅ Player using %s station"), *StationName);
+	UE_LOG(LogTemp, Warning, TEXT("Player using %s station"), *StationName);
 
 	// Get player controller
 	APlayerController* PC = Cast<APlayerController>(User->GetController());
@@ -137,13 +137,13 @@ void AMechStation::UseStation(APawn* User)
 	switch (StationType)
 	{
 	case EStationType::Pilot:
-		UE_LOG(LogTemp, Warning, TEXT("🎮 Pilot controls enabled - WASD to move mech"));
+		UE_LOG(LogTemp, Warning, TEXT("Pilot controls enabled - WASD to move mech"));
 		// Transfer control to the mech
 		if (OwningMech)
 		{
 			PC->Possess(OwningMech);
 			OwningMech->SetActivePilotStation(this);
-			UE_LOG(LogTemp, Warning, TEXT("✅ Controller now possessing mech - input routing active"));
+			UE_LOG(LogTemp, Warning, TEXT("Controller now possessing mech - input routing active"));
 
 			// Position camera at station location (inside mech)
 			if (UCameraComponent* MechCamera = OwningMech->FindComponentByClass<UCameraComponent>())
@@ -155,17 +155,17 @@ void AMechStation::UseStation(APawn* User)
 		break;
 
 	case EStationType::Gunner:
-		UE_LOG(LogTemp, Warning, TEXT("🎯 Gunner controls enabled - Mouse to aim, LMB to fire"));
+		UE_LOG(LogTemp, Warning, TEXT("Gunner controls enabled - Mouse to aim, LMB to fire"));
 		// TODO: Enable weapon control (will possess mech later)
 		break;
 
 	case EStationType::Technician:
-		UE_LOG(LogTemp, Warning, TEXT("🔧 Technician console active - Monitor systems"));
+		UE_LOG(LogTemp, Warning, TEXT("Technician console active - Monitor systems"));
 		// TODO: Enable repair/reactor control (no possession needed)
 		break;
 
 	case EStationType::Navigation:
-		UE_LOG(LogTemp, Warning, TEXT("🗺️ Navigation console active"));
+		UE_LOG(LogTemp, Warning, TEXT("Navigation console active"));
 		// TODO: Enable map/waypoint control (no possession needed)
 		break;
 	}
