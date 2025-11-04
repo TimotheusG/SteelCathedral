@@ -780,7 +780,7 @@ Minimal usage—only for critical info:
 
 ### Project Structure (Content Browser)
 ```
-/SteelCathedral
+/SteelCathedrals
 ├── /Blueprints
 │   ├── /Mech
 │   │   ├── BP_PlayerMechPawn

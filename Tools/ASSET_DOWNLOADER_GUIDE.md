@@ -1,6 +1,6 @@
 # Asset Downloader Guide
 
-Multi-source asset downloader for MechInterior project. Downloads materials, models, and audio from multiple free sources.
+Multi-source asset downloader for SteelCathedrals project. Downloads materials, models, and audio from multiple free sources.
 
 ## Supported Sources
 
@@ -484,7 +484,7 @@ Potential additions (not yet implemented):
 
 ## License
 
-This downloader script is provided as-is for the MechInterior project.
+This downloader script is provided as-is for the SteelCathedrals project.
 
 **Downloaded assets retain their original licenses:**
 - Poly Haven: CC0 (no attribution required)
