@@ -36,10 +36,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn|Mech")
 	FRotator MechSpawnRotation = FRotator::ZeroRotator;
 
-	/** Auto-capture screenshots on startup (for automated testing) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Testing")
-	bool bAutoCaptureScreenshots = false;
-
 	/** Spawn locations for 3 crew members (RELATIVE to mech origin) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn|Crew")
 	TArray<FVector> CrewSpawnLocations;

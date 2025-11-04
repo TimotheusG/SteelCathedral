@@ -7,6 +7,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "ReactorSystemComponent.h"
 
 AFireHazardActor::AFireHazardActor()
 {
@@ -285,7 +286,18 @@ void AFireHazardActor::ApplyFireDamage(float DeltaTime)
 		}
 	}
 
-	// TODO: Apply heat to reactor system if in range
+	// Feed heat into the owning mech's reactor, if any
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UReactorSystemComponent* Reactor = OwnerActor->FindComponentByClass<UReactorSystemComponent>())
+		{
+			const float HeatToApply = GetCurrentHeatGeneration() * DeltaTime;
+			if (HeatToApply > 0.0f)
+			{
+				Reactor->AddHeat(HeatToApply);
+			}
+		}
+	}
 }
 
 void AFireHazardActor::CheckForSpreading(float DeltaTime)
