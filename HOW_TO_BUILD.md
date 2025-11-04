@@ -1,11 +1,11 @@
-# How to Build MechInterior - The Working Method
+# How to Build SteelCathedrals - The Working Method
 
 ## ✅ What Actually Works
 
 After testing multiple approaches, here's the **one command that reliably works** for building this UE5.6 C++ project:
 
 ```bash
-cd "C:\Users\timge\Documents\Unreal Projects\MechInterior" && dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInteriorEditor Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\MechInterior\MechInterior.uproject" -WaitMutex
+cd "C:\Users\timge\Documents\Unreal Projects\SteelCathedrals" && dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedralsEditor Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject" -WaitMutex
 ```
 
 **Build Time:** ~5 seconds (with UBA - Unreal Build Accelerator)
@@ -22,14 +22,14 @@ dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildToo
 - Works consistently across different terminal environments
 
 ```bash
-MechInteriorEditor Win64 Development
+SteelCathedralsEditor Win64 Development
 ```
-- **MechInteriorEditor**: Target name (builds the editor version)
+- **SteelCathedralsEditor**: Target name (builds the editor version)
 - **Win64**: Platform
 - **Development**: Configuration (alternatives: Debug, Shipping, DebugGame)
 
 ```bash
--Project="C:\Users\timge\Documents\Unreal Projects\MechInterior\MechInterior.uproject"
+-Project="C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject"
 ```
 - Full path to .uproject file (required when building outside the project directory)
 
@@ -41,28 +41,15 @@ MechInteriorEditor Win64 Development
 
 ---
 
-## ❌ What Doesn't Work (And Why)
+## ✅ Alternate Command (Build.bat)
 
-### 1. Direct Build.bat Call
-```bash
-# FAILS - Quote parsing issues
-"C:\Program Files\Epic Games\UE_5.6\Engine\Build\BatchFiles\Build.bat" MechInteriorEditor Win64 Development
-```
-**Problem:** Bash/cmd handles quotes differently, path gets split at spaces
+Prefer the wrapper? It works perfectly as long as you quote the `.uproject` path:
 
-### 2. MSBuild on .sln
 ```bash
-# FAILS - .NET SDK not found
-"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" MechInterior.sln
+"C:\Program Files\Epic Games\UE_5.6\Engine\Build\BatchFiles\Build.bat" SteelCathedralsEditor Win64 Development "C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject"
 ```
-**Problem:** UE5 uses .NET 6+ SDK projects, but MSBuild looks for Framework SDKs
 
-### 3. Using PROGRA~1 Short Names
-```bash
-# FAILS - Quote escaping issues
-C:\PROGRA~1\"Epic Games"\UE_5.6\Engine\Build\BatchFiles\Build.bat
-```
-**Problem:** Mix of short names and quotes creates parsing nightmares
+Same output as the direct `dotnet` call; pick whichever syntax you like.
 
 ---
 
@@ -70,22 +57,22 @@ C:\PROGRA~1\"Epic Games"\UE_5.6\Engine\Build\BatchFiles\Build.bat
 
 ### Full Build (Clean + Compile)
 ```bash
-dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInteriorEditor Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\MechInterior\MechInterior.uproject" -WaitMutex
+dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedralsEditor Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject" -WaitMutex
 ```
 
 ### Build with Verbose Output
 ```bash
-dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInteriorEditor Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\MechInterior\MechInterior.uproject" -WaitMutex -Verbose
+dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedralsEditor Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject" -WaitMutex -Verbose
 ```
 
 ### Build Game Target (Not Editor)
 ```bash
-dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInterior Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\MechInterior\MechInterior.uproject" -WaitMutex
+dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedrals Win64 Development -Project="C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject" -WaitMutex
 ```
 
 ### Build for Shipping (Release)
 ```bash
-dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInteriorEditor Win64 Shipping -Project="C:\Users\timge\Documents\Unreal Projects\MechInterior\MechInterior.uproject" -WaitMutex
+dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedralsEditor Win64 Shipping -Project="C:\Users\timge\Documents\Unreal Projects\SteelCathedrals\SteelCathedrals.uproject" -WaitMutex
 ```
 
 ---
@@ -118,15 +105,15 @@ dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildToo
 
 ### Success Output:
 ```
-Parsing headers for MechInteriorEditor
+Parsing headers for SteelCathedralsEditor
   Running Internal UnrealHeaderTool...
-Reflection code generated for MechInteriorEditor in 1.5 seconds
-Building MechInteriorEditor...
+Reflection code generated for SteelCathedralsEditor in 1.5 seconds
+Building SteelCathedralsEditor...
 Using Visual Studio 2022 14.44.35219 toolchain
 [1/7] Compile [x64] PlayerMechPawn.cpp
 [2/7] Compile [x64] MechStation.cpp
 ...
-[7/7] WriteMetadata MechInteriorEditor.target
+[7/7] WriteMetadata SteelCathedralsEditor.target
 Result: Succeeded
 Total execution time: 5.13 seconds
 ```
@@ -138,9 +125,9 @@ Warning: Visual Studio 2022 compiler is not a preferred version
 **This is normal** - UE5.6 prefers VS2019 but works fine with VS2022
 
 ### Files Generated:
-- `Binaries/Win64/UnrealEditor-MechInterior.dll` - Game module DLL
-- `Binaries/Win64/UnrealEditor-MechInterior.lib` - Import library
-- `Intermediate/Build/Win64/MechInteriorEditor/Development/` - Intermediate files
+- `Binaries/Win64/UnrealEditor-SteelCathedrals.dll` - Game module DLL
+- `Binaries/Win64/UnrealEditor-SteelCathedrals.lib` - Import library
+- `Intermediate/Build/Win64/SteelCathedralsEditor/Development/` - Intermediate files
 - `Saved/Logs/` - Build logs
 
 ---
@@ -163,7 +150,7 @@ Warning: Visual Studio 2022 compiler is not a preferred version
 3. Consider upgrading to SSD if using HDD
 4. Use `-Clean` sparingly (forces full rebuild)
 
-### "Error: Unable to instantiate module 'MechInterior'"
+### "Error: Unable to instantiate module 'SteelCathedrals'"
 **Solution:**
 1. Delete `Binaries/`, `Intermediate/`, `Saved/` folders
 2. Right-click .uproject → Generate Visual Studio project files
@@ -178,18 +165,18 @@ Create `build.bat` in project root:
 ```batch
 @echo off
 cd /d "%~dp0"
-dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInteriorEditor Win64 Development -Project="%~dp0MechInterior.uproject" -WaitMutex
+dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedralsEditor Win64 Development -Project="%~dp0SteelCathedrals.uproject" -WaitMutex
 pause
 ```
 
 ### 2. Use Build Alias
 Add to PowerShell profile (`$PROFILE`):
 ```powershell
-function Build-MechInterior {
-    cd "C:\Users\timge\Documents\Unreal Projects\MechInterior"
-    dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" MechInteriorEditor Win64 Development -Project="$PWD\MechInterior.uproject" -WaitMutex
+function Build-SteelCathedrals {
+    cd "C:\Users\timge\Documents\Unreal Projects\SteelCathedrals"
+    dotnet "C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SteelCathedralsEditor Win64 Development -Project="$PWD\SteelCathedrals.uproject" -WaitMutex
 }
-Set-Alias bm Build-MechInterior
+Set-Alias bm Build-SteelCathedrals
 ```
 Then just type: `bm` to build!
 
@@ -219,11 +206,11 @@ UBT automatically uses all CPU cores. On 8-core CPU:
 ```
 [1/7] Compile [x64] MechGameMode.cpp
 [2/7] Compile [x64] PlayerMechPawn.cpp
-[3/7] Compile [x64] Module.MechInterior.2.cpp (Unity file)
+[3/7] Compile [x64] Module.SteelCathedrals.2.cpp (Unity file)
 [4/7] Compile [x64] MechStation.cpp
-[5/7] Link [x64] UnrealEditor-MechInterior.lib
-[6/7] Link [x64] UnrealEditor-MechInterior.dll
-[7/7] WriteMetadata MechInteriorEditor.target
+[5/7] Link [x64] UnrealEditor-SteelCathedrals.lib
+[6/7] Link [x64] UnrealEditor-SteelCathedrals.dll
+[7/7] WriteMetadata SteelCathedralsEditor.target
 ```
 
 **Unity Build:** UBT combines multiple .cpp files into unity files to speed up compilation
@@ -252,8 +239,8 @@ UBT automatically uses all CPU cores. On 8-core CPU:
 
 After successful build, verify these files exist:
 ```
-Binaries/Win64/UnrealEditor-MechInterior.dll    (~1-5 MB)
-Binaries/Win64/UnrealEditor-MechInterior.pdb    (~10-50 MB, debug symbols)
+Binaries/Win64/UnrealEditor-SteelCathedrals.dll    (~1-5 MB)
+Binaries/Win64/UnrealEditor-SteelCathedrals.pdb    (~10-50 MB, debug symbols)
 ```
 
 If missing, the Editor won't load your module.
@@ -274,7 +261,7 @@ If missing, the Editor won't load your module.
 **Cause:** Trying to access private/protected member
 **Fix:** Make member public, add getter, or add friend declaration
 
-### Error: "Module 'MechInterior' could not be loaded"
+### Error: "Module 'SteelCathedrals' could not be loaded"
 **Cause:** DLL failed to link or load
 **Fix:** Check Output Log for dependency errors, rebuild with `-Clean`
 

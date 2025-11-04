@@ -1,13 +1,13 @@
-# MechInterior - Current Codebase State (ACTUAL IMPLEMENTATION)
+# Steel Cathedrals - Current Codebase State (ACTUAL IMPLEMENTATION)
 
-**Last Updated:** 2025-11-03
+**Last Updated:** 2025-11-04
 **Status:** FUNCTIONAL PROTOTYPE - Core systems implemented and working
 
 ---
 
 ## Executive Summary
 
-After reading **ALL .cpp implementation files**, here's what actually exists and works:
+After reading **ALL current `Source/SteelCathedrals/*.cpp` implementation files**, here's what actually exists and works (project renamed from *MechInterior* to *Steel Cathedrals*; class names below reflect the current code):
 
 ✅ **FULLY IMPLEMENTED** (7 major systems):
 - Player Mech with full input handling
@@ -20,7 +20,7 @@ After reading **ALL .cpp implementation files**, here's what actually exists and
 
 ⚠️ **PARTIALLY IMPLEMENTED** (3 systems):
 - Enemy AI mech (structure complete, behaviors stubbed)
-- Interior stations (interaction volumes, use logic partial)
+- Interior stations (crew interaction + station actions implemented; UI polish remaining)
 - Additional hazards (Coolant/Electrical - similar to Fire)
 
 ❌ **NOT IMPLEMENTED** (just headers):
@@ -30,7 +30,7 @@ After reading **ALL .cpp implementation files**, here's what actually exists and
 
 ## Implementation Detail Analysis
 
-### 1. PlayerMechPawn (PlayerMechPawn.cpp - 272 lines)
+### 1. Mech (Mech.cpp - 301 lines)
 
 **✅ FULLY WORKING**
 
@@ -481,32 +481,24 @@ MoveToOptimalRange() - declared but not implemented
 
 ---
 
-### 9. MechStation (MechStation.cpp - 100+ lines visible)
+### 9. MechStation (MechStation.cpp - 200+ lines)
 
-**⚠️ PARTIALLY IMPLEMENTED**
+**✅ FUNCTIONAL WITH ROOM FOR POLISH**
 
 **Implemented:**
-- ✅ Component creation (mesh, interaction volume)
-- ✅ Overlap detection
-- ✅ Auto-find owning mech
-- ✅ CanUseStation() validation
-- ✅ UseStation() starts - disables character input
+- ✅ Component creation (mesh, interaction volume, auto-link to owning mech)
+- ✅ CanUseStation() validation with range checks
+- ✅ UseStation(): stores occupant, disables movement, repositions camera, notifies mech
+- ✅ CrewMember `Interact` toggles entry/exit, `Fire` forwards to station actions
+- ✅ Pilot stations hand off possession to `AMech` and restore it on exit
+- ✅ Gunner stations call `WeaponSystem->FireWeapon()` / `StopFiring()`
+- ✅ Technician stations trigger `ReactorSystem->InitiateVenting()`
+- ✅ On-screen debug prompts when entering/leaving range (temporary HUD)
 
-**Partially Visible:**
-```cpp
-UseStation()
-- Checks if can use
-- Sets bIsOccupied = true
-- Gets PlayerController
-- Disables character input
-- [Cut off at line 100]
-```
-
-**Likely Missing:**
-- Camera transition to seated position
-- Control handoff to mech systems
-- LeaveStation() implementation
-- Station-specific UI activation
+**Polish / Next Steps:**
+- Replace debug messages with proper UMG prompts / status displays
+- Seat alignment + animation polish when occupying consoles
+- Additional station gameplay (navigation console, repair minigames)
 
 ---
 
@@ -529,7 +521,7 @@ Structure exists, creates interior environment. Implementation details not fully
 
 | Component | Implemented | Integrated | Tested | Notes |
 |-----------|-------------|------------|--------|-------|
-| **PlayerMechPawn** | ✅ 100% | ✅ Yes | ⚠️ Unknown | Input→Systems connected |
+| **Mech** | ✅ 100% | ✅ Yes | ⚠️ Unknown | Input→Systems connected |
 | **MechMovement** | ✅ 100% | ✅ Yes | ⚠️ Unknown | Production-ready code |
 | **WeaponSystem** | ✅ 100% | ⚠️ Partial | ⚠️ Unknown | Heat not connected to reactor |
 | **ReactorSystem** | ✅ 100% | ⚠️ Partial | ⚠️ Unknown | Receives nothing yet |
@@ -570,7 +562,7 @@ Based on implementation analysis:
 
 ✅ **PARTIALLY FUNCTIONAL:**
 1. Enemy AI (exists but doesn't attack)
-2. Interior stations (can approach, partial use)
+2. Interior stations (crew can interact, occupy consoles, fire weapons, vent reactor; still want polished UI/prompts)
 3. Additional hazards (likely work like fire)
 
 ❌ **NOT FUNCTIONAL:**
@@ -584,46 +576,6 @@ Based on implementation analysis:
 
 ---
 
-## Missing Integrations (Simple Fixes)
-
-These are defined and ready, just not connected:
-
-### 1. Weapon Heat → Reactor
-```cpp
-// WeaponSystemComponent.cpp line 183
-// Currently commented out:
-// ReactorSystem->AddHeat(Weapon.HeatPerShot);
-
-// FIX: Uncomment and get reactor reference
-UReactorSystemComponent* Reactor = GetOwner()->FindComponentByClass<UReactorSystemComponent>();
-if (Reactor) {
-    Reactor->AddHeat(Weapon.HeatPerShot);
-}
-```
-
-### 2. Fire Heat → Reactor
-```cpp
-// FireHazardActor.cpp line 288
-// TODO comment: Apply heat to reactor system if in range
-
-// FIX: Find reactor and add heat
-APlayerMechPawn* Mech = Cast<APlayerMechPawn>(GetOwner());
-if (Mech && Mech->ReactorSystem) {
-    float Heat = GetCurrentHeatGeneration() * DeltaTime;
-    Mech->ReactorSystem->AddHeat(Heat);
-}
-```
-
-### 3. Enemy AI Behaviors
-All functions declared, just need implementation in EnemyMechPawn.cpp:
-- AI_Engage() - most critical
-- ScanForTargets()
-- AimAtTarget()
-- FireAtTarget()
-- MoveToOptimalRange()
-
----
-
 ## Code Quality Assessment
 
 **Professional-Grade:**
@@ -634,19 +586,19 @@ All functions declared, just need implementation in EnemyMechPawn.cpp:
 - FireHazardActor (380 lines, full environmental hazard)
 
 **Well-Structured:**
-- PlayerMechPawn (clean integration point)
+- Mech (clean integration point)
 - ProceduralMechGeometry (large but organized)
 
 **Needs Work:**
 - EnemyMechPawn (structure good, behaviors empty)
-- MechStation (partial implementation)
+- HUD/UI polish for stations and technician workflows
 
 ---
 
 ## Total Line Count
 
 ```
-PlayerMechPawn.cpp:              272 lines
+Mech.cpp:              301 lines
 MechMovementComponent.cpp:       298 lines
 WeaponSystemComponent.cpp:       441 lines
 ReactorSystemComponent.cpp:      238 lines
